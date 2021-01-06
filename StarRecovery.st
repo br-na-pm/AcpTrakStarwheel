@@ -50,9 +50,11 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- Get shuttles in sector
                 
             IF NOT Enable THEN
+                Internal.SecGetShuttle.Next := 0;
                 Internal.SecGetShuttle.Enable := 0;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             ELSIF Internal.SecGetShuttle.Error THEN
+                Internal.SecGetShuttle.Next := 0;
                 Internal.SecGetShuttle.Enable := 0;
                 Error := 1;
                 ErrorID := Internal.SecGetShuttle.ErrorID;
