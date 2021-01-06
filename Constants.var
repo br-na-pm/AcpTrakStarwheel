@@ -1,0 +1,23 @@
+(*Errors*)
+VAR CONSTANT
+	slERR_ZERO_PERIOD : DINT := -5000; (*The period is zero and thus invalid*)
+	slERR_ZERO_POCKETS : DINT := -5001; (*The number of pockets are zero and thus invalid*)
+	slERR_POCKET_GT_COUNT : DINT := -5002; (*The target pocket is greater than the pocket count*)
+	slERR_ZERO_RADIUS : DINT := -5003; (*The starwheel radius cannot be zero*)
+	slERR_INVALID_HANDLE : DINT := -5004; (*The handle provided is invalid*)
+	slERR_MAX_TARGET_IDX : DINT := -5005; (*The maximum target index is too large*)
+	slERR_NO_TARGET : DINT := -5006; (*No targets available*)
+	slERR_TARGET_ALREADY_SYNCED : DINT := -5007; (*Attempted to sync to a target that is already synced*)
+	slERR_TARGET_OUT_OF_TOL : DINT := -5008; (*Sync target is out of tolerance from shuttle position*)
+	slERR_INVALID_USER_DATA : DINT := -5009; (*Invalid user data parameters*)
+	slERR_SYNC_ABORTED : DINT := -5010; (*The synchronization was aborted while a shuttle was in sync*)
+END_VAR
+(*Values*)
+VAR CONSTANT
+	slMAX_TARGET_IDX : UINT := 64; (*Maximum target index*)
+	slMAX_SH_IDX_IN_SEC : UINT := 64; (*Maximum shuttle index in sector*)
+	slMAX_PERIOD_IDX : USINT := 32; (*Maximum period index to track targets through*)
+	slMAX_DISABLE_POCKET_IDX : USINT := 24; (*Maximum index of pocket to disable*)
+	slMAX_STATE_TRACE_IDX : USINT := 100; (*Maximum index of the state trace*)
+	slSTAR_INTERNAL_TYPE_ID : UDINT := 648661409; (*ID to indicate that structure is StarSync Internal Data*)
+END_VAR
