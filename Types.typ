@@ -146,6 +146,7 @@ TYPE
 		PocketEvalIndex : UINT; (*Pocket index to evaluate*)
 		PocketEvalCount : USINT; (*Number of pockets evaluated*)
 		Axes : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Sync axes*)
+		ShuttleErrors : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL;
 		PocketIndices : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF UINT; (*Pocket indices assigned to the sync axes*)
 		ShuttleError : LREAL; (*Distance from shuttle to pocket*)
 		ShuttleErrorNew : LREAL; (*New distance from shuttle to pocket*)

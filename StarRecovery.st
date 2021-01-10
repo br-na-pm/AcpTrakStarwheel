@@ -21,13 +21,10 @@ FUNCTION_BLOCK slStarRecovery
                         ErrorID := slERR_INVALID_HANDLE;
                         Internal.State := slREC_STATE_ERROR;
                     ELSE
-                        
                         brsmemset(ADR(Internal.Data), 0, SIZEOF(Internal.Data));
-            
                         Internal.AsmGetInfo.Assembly    := ADR(Assembly);
                         Internal.AsmGetInfo.Execute     := TRUE;
                         Internal.State := slREC_STATE_CHECK_SECTOR_SIM;    
-
                     END_IF
                 END_IF
             END_IF
@@ -196,9 +193,7 @@ FUNCTION_BLOCK slStarRecovery
             IF Enable THEN
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.Release.Position AND 
                    Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.01) THEN
-                    
                     Internal.State := slREC_STATE_SYN_ZONE_TARGET;
-                   
                 ELSE
                     Internal.State := slREC_STATE_BACKUP_ZONE_CHECK;
                 END_IF
@@ -438,6 +433,7 @@ FUNCTION_BLOCK slStarRecovery
         slREC_STATE_BACKUP_ZONE_MOVBAR:
             
             IF NOT Enable THEN
+                Internal.ElasticMoveAbs.Execute := FALSE;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             ELSIF Internal.ElasticMoveAbs.Done THEN
                 Internal.ElasticMoveAbs.Execute := FALSE;
@@ -445,16 +441,22 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.BarrierCmd.ProcessPoint    := ADR(Parameters.Backup.ProcessPointStart);
                 Internal.BarrierCmd.Execute := TRUE;
                 Internal.State  := slREC_STATE_BACKUP_ZONE_BARCLOSE;
-            ELSIF Internal.ElasticMoveAbs.Error THEN
+            ELSIF Internal.ElasticMoveAbs.CommandAborted THEN
                 Internal.ElasticMoveAbs.Execute := FALSE;
                 Error := 1;
                 ErrorID := Internal.ElasticMoveAbs.ErrorID;
+                Internal.State := slREC_STATE_ERROR;
+            ELSIF Internal.ElasticMoveAbs.Error THEN
+                Internal.ElasticMoveAbs.Execute := FALSE;
+                Error := 1;
+                ErrorID := slERR_RECOV_MOVEMNT_ABORTED;
                 Internal.State := slREC_STATE_ERROR;
             END_IF;
             
         slREC_STATE_BACKUP_ZONE_BARCLOSE: 
             
             IF NOT Enable THEN 
+                Internal.BarrierCmd.Execute := FALSE;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             ELSIF Internal.BarrierCmd.Done THEN
                 Internal.BarrierCmd.Execute := FALSE;
@@ -473,7 +475,7 @@ FUNCTION_BLOCK slStarRecovery
             StarInternal ACCESS Internal.Handle; 
             
             IF NOT Enable THEN
-                Internal.ShResize.Execute := 0;
+                Internal.ShResize.Execute := FALSE;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             ELSIF Internal.ShResize.Error THEN
                 Internal.ShResize.Execute := 0;
@@ -497,7 +499,6 @@ FUNCTION_BLOCK slStarRecovery
                     END_IF
                 END_IF
             END_IF
-            
             
         slREC_STATE_GET_USERDATA:
             
@@ -560,7 +561,6 @@ FUNCTION_BLOCK slStarRecovery
                 END_IF
                     
             END_IF
-            
             
         slREC_STATE_DONE:
             
