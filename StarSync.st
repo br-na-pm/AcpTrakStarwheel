@@ -20,6 +20,7 @@ FUNCTION_BLOCK slStarSync
         FOR Internal.i := 0 TO Internal.MaxTargetIndex DO
             IF Internal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset AND
                 Internal.LastTargetPosition[Internal.i] < Parameters.ProcessPointStartPosition + Parameters.StartOffset AND
+                Internal.PocketSync[Internal.i].TargetPosition < Parameters.SyncPar.StarCalcTarget.SectorTangentPos AND 
                 Internal.PocketSync[Internal.i].Active AND
                 NOT Internal.PocketSync[Internal.i].Sync THEN
     			
