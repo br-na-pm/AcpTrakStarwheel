@@ -74,7 +74,6 @@ FUNCTION_BLOCK slStarRecovery
                         Internal.RoutedMoveAbs.AdvancedParameters.StartDirection    := mcDIR_UNDEFINED;
                         Internal.RoutedMoveAbs.AdvancedParameters.EndDirection      := mcDIR_UNDEFINED;
                         Internal.RoutedMoveAbs.AdvancedParameters.ShuttleOrientation    := mcDIR_UNDEFINED;
-                        Internal.RoutedMoveAbs.AdvancedParameters.PosRelativeTo     := mcACPTRAK_SEC_START;
                         Internal.RoutedMoveAbs.Execute  := TRUE;
                         
                         Internal.State  := slREC_STATE_ATTACH_TO_SECTOR;
