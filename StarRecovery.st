@@ -162,6 +162,10 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.RoutedMoveVel.Velocity := Parameters.Release.Velocity;
                 Internal.RoutedMoveVel.Acceleration := Parameters.Release.Acceleration;
                 Internal.RoutedMoveVel.Deceleration := Parameters.Release.Deceleration;
+                Internal.RoutedMoveVel.AdvancedParameters.StartDirection    := mcDIR_POSITIVE;
+                Internal.RoutedMoveVel.AdvancedParameters.EndDirection      := mcDIR_UNDEFINED;
+                Internal.RoutedMoveVel.AdvancedParameters.ShuttleOrientation    := mcDIR_UNDEFINED;
+                
                 Internal.RoutedMoveVel.Execute := TRUE;
                 Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;     
                 Internal.State := slREC_STATE_RELEASE_ZONE_NEXT;
