@@ -241,7 +241,8 @@ TYPE
 		LastPocketActiveState : ARRAY[0..slMAX_TARGET_IDX]OF BOOL; (*Capture the last pocket sync active state*)
 		LastTargetPosition : ARRAY[0..slMAX_TARGET_IDX]OF REAL; (*Last observed target position for each target*)
 		NextSyncTarget : UINT; (*Next target to sync shuttle with*)
-		NewOvertakeDetected : BOOL; (*A shuttle has passed the synchronization point*)
+		NewDisabledOvertake : BOOL; (*A disabled target position has passed the synchronization threshold*)
+		NewOvertakeDetected : BOOL; (*A target position has passed the synchronization threshold*)
 		State : slStarSyncStateEnum; (*State of execution*)
 		SkipCount : USINT; (*Number of pockets skipped*)
 		PocketDisabled : BOOL; (*Current target pocket is disabled*)
@@ -260,6 +261,7 @@ TYPE
 		slSTAR_STATE_WAIT_TARGET, (*Wait for the next target to arrive*)
 		slSTAR_STATE_TICKET_COUNT, (*Read ticket count*)
 		slSTAR_STATE_ADD_TICKET, (*Add a ticket to the barrier*)
+		slSTAR_STATE_REMOVE_TICKETS,
 		slSTAR_STATE_WAIT_SHUTTLE, (*Wait for the next shuttle to arrive*)
 		slSTAR_STATE_EVENT_INFO, (*Get event info*)
 		slSTAR_STATE_RESET_FB, (*Reset function blocks*)

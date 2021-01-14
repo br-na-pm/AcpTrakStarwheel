@@ -27,17 +27,20 @@ FUNCTION_BLOCK slStarSync
                 Internal.PocketDisabled := 0;
                 IF DisablePockets AND (Parameters.Skip.NumDisabled > 0) THEN
                     FOR Internal.n := 0 TO MIN(Parameters.Skip.NumDisabled - 1, slMAX_DISABLE_POCKET_IDX) DO
-                        IF Parameters.Skip.DisabledIdx[Internal.n] = (Internal.i MOD (Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount + 1)) THEN
+                        IF Parameters.Skip.DisabledIdx[Internal.n] = (Internal.i MOD (Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount)) THEN
                             Internal.PocketDisabled := 1;
                             EXIT;
                         END_IF
                     END_FOR
-                END_IF
-                
-                IF NOT Internal.PocketDisabled THEN
-                    Internal.NextSyncTarget := Internal.i;
-                    Internal.NewOvertakeDetected := TRUE;
-                END_IF
+				END_IF
+				
+				IF Internal.PocketDisabled THEN
+					Internal.NewDisabledOvertake	:= TRUE;
+				ELSE
+					Internal.NextSyncTarget			:= Internal.i;
+					Internal.NewOvertakeDetected	:= TRUE;
+				END_IF;
+				
     			
             END_IF
             IF Internal.PocketSync[Internal.i].Done THEN
@@ -186,7 +189,10 @@ FUNCTION_BLOCK slStarSync
                 ELSE
                     Internal.BarrierReadInfo.Enable := 1;
                     Internal.State := slSTAR_STATE_TICKET_COUNT;
-                END_IF
+				END_IF
+			ELSIF Internal.NewDisabledOvertake THEN
+				Internal.BarrierReadInfo.Enable := 1;
+				Internal.State := slSTAR_STATE_TICKET_COUNT;
             END_IF
         
         slSTAR_STATE_TICKET_COUNT:
@@ -199,12 +205,20 @@ FUNCTION_BLOCK slStarSync
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF Internal.BarrierReadInfo.Valid THEN
                 Internal.BarrierReadInfo.Enable := 0;
-                IF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 THEN
+                IF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 AND Internal.NewOvertakeDetected THEN
                     Internal.BarrierCommand.AdvancedParameters.TicketCount := 1;
                     Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
                     Internal.BarrierCommand.Execute := 1;
-                    Internal.State := slSTAR_STATE_ADD_TICKET;
-                ELSE
+					Internal.State := slSTAR_STATE_ADD_TICKET;
+				ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets >= 1 AND Internal.NewDisabledOvertake THEN
+					Internal.BarrierCommand.AdvancedParameters.TicketCount := -1 * Internal.BarrierReadInfo.BarrierInfo.RemainingTickets;
+					Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
+					Internal.BarrierCommand.Execute := 1;
+					Internal.State := slSTAR_STATE_REMOVE_TICKETS;
+				ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 AND Internal.NewDisabledOvertake THEN
+					Internal.NewDisabledOvertake := 0;
+					Internal.State := slSTAR_STATE_WAIT_TARGET;
+				ELSE
                     Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
                 END_IF
             END_IF
@@ -220,7 +234,21 @@ FUNCTION_BLOCK slStarSync
             ELSIF Internal.BarrierCommand.Done THEN
                 Internal.BarrierCommand.Execute := 0;
                 Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
-            END_IF
+			END_IF
+			
+		slSTAR_STATE_REMOVE_TICKETS:
+			
+			IF NOT Enable THEN
+				Internal.State := slSTAR_STATE_RESET_FB;
+			ELSIF Internal.BarrierCommand.Error THEN
+				Error := 1;
+				ErrorID := Internal.BarrierCommand.ErrorID;
+				Internal.State := slSTAR_STATE_RESET_FB;
+			ELSIF Internal.BarrierCommand.Done THEN
+				Internal.BarrierCommand.Execute := 0;
+				Internal.NewDisabledOvertake := 0;
+				Internal.State := slSTAR_STATE_WAIT_TARGET;
+			END_IF;			
             
         slSTAR_STATE_WAIT_SHUTTLE:
             
