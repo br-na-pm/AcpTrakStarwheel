@@ -299,7 +299,7 @@ FUNCTION_BLOCK slStarRecovery
             
             IF NOT Enable THEN
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition + Parameters.StartOffset - Parameters.PocketErrorTolerance AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.Backup.BackupTolerance THEN 
+            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.01 AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.Backup.BackupTolerance THEN 
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.Backup.BackupTolerance THEN
 	                Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.EvalCount]    := TRUE;
                 END_IF;          
