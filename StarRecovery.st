@@ -379,6 +379,8 @@ FUNCTION_BLOCK slStarRecovery
                 IF NOT StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync THEN
                     StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Axis := Internal.Data.Sync.Axes[Internal.Data.Sync.RecoveredCount];
                     StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync := 1;
+                    Internal.Data.SyncFurtherIn.NextOpenPocket  := Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount];
+                    Internal.Data.SyncFurtherIn.NextOpenPocketValid := TRUE;
                     Internal.Data.Sync.RecoveredCount := Internal.Data.Sync.RecoveredCount + 1;
                 ELSE
                     Error := 1;
@@ -404,6 +406,8 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.BarrierCmd.ProcessPoint    := ADR(Parameters.Backup.ProcessPointStart);
                 Internal.BarrierCmd.Execute := TRUE;
                 Internal.State  := slREC_STATE_BACKUP_ZONE_BAROPEN;
+            ELSIF Parameters.SyncFurtherInEnabled THEN
+                Internal.Data.
             ELSIF StarInternal.NewOvertakeDetected THEN
                 StarInternal.NewOvertakeDetected := 0;
                 Internal.ShResize.Axis := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);

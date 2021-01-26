@@ -83,6 +83,7 @@ TYPE
 	slStarRecoveryParType : 	STRUCT  (*Star recovery parameters*)
 		ResizeStart : McAcpTrakShResizeParamType; (*Resize dimensions at start of synchronization*)
 		ResizeEnd : McAcpTrakShResizeParamType; (*Resize dimensions at end of synchronization*)
+		SyncFurtherInEnabled : BOOL;
 		Release : slStarRecoveryParReleaseType; (*Recovery Release Parameters*)
 		ProcessPointStartPosition : LREAL; (*Position on the sector of the process point that starts the synchronization*)
 		StartOffset : LREAL; (*Offset from the process point before synchronizing*)
@@ -132,6 +133,11 @@ TYPE
 		Sync : slStarRecoveryDataSyncType; (*Sync recovery data*)
 		Backup : slStarRecoveryDataBackupType; (*Backup recovery data*)
 		UserData : slStarRecoveryDataUserDataType;
+		SyncFurtherIn : slStarRecoveryDataSyncFurInType;
+	END_STRUCT;
+	slStarRecoveryDataSyncFurInType : 	STRUCT 
+		NextOpenPocket : USINT; (*Next open pocket available to sync further in*)
+		NextOpenPocketValid : BOOL;
 	END_STRUCT;
 	slStarRecoveryDataUserDataType : 	STRUCT 
 		UserDataWriteCount : UINT;
@@ -210,6 +216,7 @@ TYPE
 	slStarSyncRecoveryParType : 	STRUCT  (*Star parameters for recovery*)
 		Release : slStarSyncRecoveryReleaseType; (*Release parameters*)
 		UserData : slStarRecoveryParUserDataType; (*User data buffer data for successful recovery*)
+		SyncFurtherInEnabled : BOOL;
 		PocketErrorTolerance : LREAL; (*Pocket error tolerance for resynchronization*)
 		MoveToBarVelocity : REAL;
 		MoveToBarAcceleration : REAL;
