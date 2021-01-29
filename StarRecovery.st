@@ -195,7 +195,7 @@ FUNCTION_BLOCK slStarRecovery
             
             IF Enable THEN
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.Release.Position AND 
-                   Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.01) THEN
+                    Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.015) THEN
                     Internal.State := slREC_STATE_SYN_ZONE_TARGET;
                 ELSE
                     Internal.State := slREC_STATE_BACKUP_ZONE_CHECK;
@@ -209,18 +209,22 @@ FUNCTION_BLOCK slStarRecovery
                 
             //Find the closest pocket to to the shuttle
             StarInternal ACCESS Internal.Handle;
+            Internal.Data.Sync.PocketEvalIndex  := 0;
+            Internal.Data.Sync.PocketEvalIndexValid := FALSE;
             IF StarInternal.MaxTargetIndex > 0 THEN
                 FOR Internal.i := 0 TO StarInternal.MaxTargetIndex DO
                     Internal.Data.Sync.ShuttleErrorNew := StarInternal.PocketSync[Internal.i].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount];
-                    IF Internal.i > 0 THEN
+                    IF Internal.i = 0 THEN
+                        Internal.Data.Sync.ShuttleError := Internal.Data.Sync.ShuttleErrorNew;
+                    END_IF;
+                    //Ignore any pockets that are before the sync zone
+                    IF StarInternal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.015 THEN
+                        Internal.Data.Sync.PocketEvalIndexValid := TRUE;
                         IF ABS(Internal.Data.Sync.ShuttleErrorNew) < ABS(Internal.Data.Sync.ShuttleError) THEN
                             Internal.Data.Sync.PocketEvalIndex := Internal.i;
                             Internal.Data.Sync.ShuttleError := Internal.Data.Sync.ShuttleErrorNew;
                         END_IF
-                    ELSE
-                        Internal.Data.Sync.PocketEvalIndex := Internal.i;
-                        Internal.Data.Sync.ShuttleError := Internal.Data.Sync.ShuttleErrorNew;
-                    END_IF
+                    END_IF;
                 END_FOR
             ELSE
                 Error := 1;
@@ -299,9 +303,9 @@ FUNCTION_BLOCK slStarRecovery
             
             IF NOT Enable THEN
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.01 AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.Backup.BackupTolerance THEN 
-                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.Backup.BackupTolerance THEN
-	                Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.EvalCount]    := TRUE;
+            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.015 AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN 
+                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN
+                    Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.EvalCount]    := TRUE;
                 END_IF;          
                 Internal.Data.Backup.Axes[Internal.Data.Backup.EvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
                 Internal.Data.Backup.EvalCount := Internal.Data.Backup.EvalCount + 1;

@@ -90,6 +90,7 @@ TYPE
 		PocketErrorTolerance : LREAL; (*Allowed pocket error tolerance*)
 		UserData : slStarRecoveryParUserDataType; (*UserData parameters*)
 		Backup : slStarRecoveryParBackupType;
+		ShExtentToFront : LREAL;
 	END_STRUCT;
 	slStarRecoveryParBackupType : 	STRUCT  (*Recovery Release Parameters*)
 		BackupTolerance : LREAL;
@@ -150,6 +151,7 @@ TYPE
 	END_STRUCT;
 	slStarRecoveryDataSyncType : 	STRUCT  (*Sync recovery data*)
 		PocketEvalIndex : UINT; (*Pocket index to evaluate*)
+		PocketEvalIndexValid : BOOL;
 		PocketEvalCount : USINT; (*Number of pockets evaluated*)
 		Axes : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Sync axes*)
 		ShuttleErrors : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL;
@@ -212,6 +214,7 @@ TYPE
 		SyncPar : slStarPocketSyncParType; (*Synchronization parameters*)
 		Recovery : slStarSyncRecoveryParType; (*Star parameters for recovery*)
 		Skip : slStarSyncSkipParType; (*Skip parameters*)
+		ShExtentToFront : LREAL;
 	END_STRUCT;
 	slStarSyncRecoveryParType : 	STRUCT  (*Star parameters for recovery*)
 		Release : slStarSyncRecoveryReleaseType; (*Release parameters*)
