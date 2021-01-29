@@ -91,6 +91,7 @@ TYPE
 		UserData : slStarRecoveryParUserDataType; (*UserData parameters*)
 		Backup : slStarRecoveryParBackupType;
 		ShExtentToFront : LREAL;
+		SectorTangentPos : REAL;
 	END_STRUCT;
 	slStarRecoveryParBackupType : 	STRUCT  (*Recovery Release Parameters*)
 		BackupTolerance : LREAL;
@@ -134,11 +135,10 @@ TYPE
 		Sync : slStarRecoveryDataSyncType; (*Sync recovery data*)
 		Backup : slStarRecoveryDataBackupType; (*Backup recovery data*)
 		UserData : slStarRecoveryDataUserDataType;
-		SyncFurtherIn : slStarRecoveryDataSyncFurInType;
 	END_STRUCT;
 	slStarRecoveryDataSyncFurInType : 	STRUCT 
-		NextOpenPocket : USINT; (*Next open pocket available to sync further in*)
-		NextOpenPocketValid : BOOL;
+		LastSyncedPocket : USINT; (*Next open pocket available to sync further in*)
+		LastSyncedPocketValid : BOOL;
 	END_STRUCT;
 	slStarRecoveryDataUserDataType : 	STRUCT 
 		UserDataWriteCount : UINT;
@@ -166,6 +166,11 @@ TYPE
 		RecoveredCount : USINT; (*Number of shuttles recovered*)
 		IsBeforeBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicates if a shuttle is in the backup zone but before the barrier (have to move to gaurantee it won't get stuck at the barrier)*)
 		MovedToBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicated if a shuttle has been moved to the barrier location*)
+		SyncFurtherIn : slStarRecoveryDataBackupFIType;
+	END_STRUCT;
+	slStarRecoveryDataBackupFIType : 	STRUCT  (*Sync further in type for backup zone*)
+		CurrentPocketIndex : UINT; (*Current pocket index being evaluated*)
+		SyncFurtherInFinished : BOOL; (*All shuttles in backup zone have synced to the closest pockets possible*)
 	END_STRUCT;
 	slStarRecoveryStateEnum : 
 		( (*State of execution*)
@@ -195,6 +200,7 @@ TYPE
 		slREC_STATE_BACKUP_ZONE_MOVBAR,
 		slREC_STATE_BACKUP_ZONE_BARCLOSE,
 		slREC_STATE_BACKUP_ZONE_SYNC, (*Sync shuttle in backup zone to target*)
+		slREC_STATE_BACKUP_ZONE_SYNC_FI, (*Backup zone sync further in*)
 		slREC_STATE_BACKUP_GET_USERDATA, (*Get backup zone userdata*)
 		slREC_STATE_BACKUP_SET_USERDATA, (*Set backup zone userdata*)
 		slREC_STATE_GET_USERDATA,

@@ -15,6 +15,7 @@ VAR CONSTANT
 END_VAR
 (*Values*)
 VAR CONSTANT
+	slNO_CLOSEST_POCKET_FOUND : UINT := 65535; (*No closest pocket was found (sync further in functionality)*)
 	slMAX_TARGET_IDX : UINT := 64; (*Maximum target index*)
 	slMAX_SH_IDX_IN_SEC : UINT := 64; (*Maximum shuttle index in sector*)
 	slMAX_PERIOD_IDX : USINT := 32; (*Maximum period index to track targets through*)

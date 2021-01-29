@@ -14,6 +14,7 @@
     <File Description="StarDiag Implementation">StarDiag.st</File>
     <File Description="StarDiagLastStateError Implementation">StarDiagLastStateError.st</File>
     <File Description="StarDiagStateTrace Implementation">StarDiagStateTrace.st</File>
+    <File>ClosestSyncPocket.st</File>
   </Files>
   <Dependencies>
     <Dependency ObjectName="AsBrMath" />

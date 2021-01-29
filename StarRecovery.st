@@ -383,8 +383,6 @@ FUNCTION_BLOCK slStarRecovery
                 IF NOT StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync THEN
                     StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Axis := Internal.Data.Sync.Axes[Internal.Data.Sync.RecoveredCount];
                     StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync := 1;
-                    Internal.Data.SyncFurtherIn.NextOpenPocket  := Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount];
-                    Internal.Data.SyncFurtherIn.NextOpenPocketValid := TRUE;
                     Internal.Data.Sync.RecoveredCount := Internal.Data.Sync.RecoveredCount + 1;
                 ELSE
                     Error := 1;
@@ -410,8 +408,9 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.BarrierCmd.ProcessPoint    := ADR(Parameters.Backup.ProcessPointStart);
                 Internal.BarrierCmd.Execute := TRUE;
                 Internal.State  := slREC_STATE_BACKUP_ZONE_BAROPEN;
-            ELSIF Parameters.SyncFurtherInEnabled THEN
-                Internal.Data.
+            ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
+                Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
+                Internal.State  := slREC_STATE_BACKUP_ZONE_SYNC_FI;
             ELSIF StarInternal.NewOvertakeDetected THEN
                 StarInternal.NewOvertakeDetected := 0;
                 Internal.ShResize.Axis := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);
@@ -510,6 +509,22 @@ FUNCTION_BLOCK slStarRecovery
                     END_IF
                 END_IF
             END_IF
+        
+        slREC_STATE_BACKUP_ZONE_SYNC_FI:
+            
+            IF (Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex <> slNO_CLOSEST_POCKET_FOUND) AND (Internal.Data.Backup.RecoveredCount <> Internal.Data.Backup.EvalCount) THEN
+                StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex]].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
+                StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync := 1;
+                Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
+                Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
+            ELSE
+                Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished    := TRUE;
+                IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
+                    Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
+                ELSE
+                    Internal.State := slREC_STATE_GET_USERDATA;
+                END_IF
+            END_IF;
             
         slREC_STATE_GET_USERDATA:
             

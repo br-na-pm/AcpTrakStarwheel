@@ -13,6 +13,26 @@ END_FUNCTION
 	END_VAR
 END_FUNCTION
 
+{REDUND_ERROR} FUNCTION ClosestSyncPocket : UINT (*Finds the closest pocket to the tangent point of the starwheel that a shuttle can sync to*) (*$GROUP=User,$CAT=User,$GROUPICON=User.png,$CATICON=User.png*)
+	VAR_INPUT
+		SectorTangentPos : LREAL; (*Tangent point of the starwheel*)
+		SyncZoneStartPos : LREAL; (*Start of the sync zone on the starwheel sector*)
+		Handle : UDINT; (*Starwheel internal data handle*)
+	END_VAR
+	VAR
+		StarInternal : REFERENCE TO slStarSyncInternalType; (*Star Internal Data*)
+		TangentPocketLocationError : LREAL; (*Error of the current evaluation pocket*)
+		TangentPocketLocationErrorNew : LREAL;
+		FirstSyncPocketLocationError : LREAL; (*Error of the current evaluation pocket*)
+		FirstSyncPocketLocationErrorNew : LREAL;
+		TangentPocketIndex : UINT;
+		FirstSyncPocketIndex : UINT;
+		CurrentEvalPocket : UINT;
+		CurrentEvalPocketValid : BOOL;
+		i : USINT;
+	END_VAR
+END_FUNCTION
+
 FUNCTION_BLOCK slStarCalcTarget (*Synchronous function block that calculates the position of the sync positions*)
 	VAR_INPUT
 		TargetIndex : USINT; (*Index to generate a position for*)
