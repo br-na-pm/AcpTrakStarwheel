@@ -40,8 +40,10 @@ FUNCTION_BLOCK slStarCalcTarget
                     Internal.PerformCalculation := 1;
                     Internal.State := slTARGET_CALC_STATE_RUN;
                     
-                END_IF
-                
+				END_IF
+				
+			ELSE
+				Internal.CurrentStarwheelPeriod	:= 0;                
             END_IF
         
         slTARGET_CALC_STATE_RUN:
