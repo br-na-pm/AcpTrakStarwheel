@@ -122,6 +122,7 @@ FUNCTION_BLOCK slStarSync
             
         slSTAR_STATE_RECOVER:
             
+            Internal.RecoveryPar.ShExtentToFront    := Parameters.ShExtentToFront;
             Internal.RecoveryPar.ProcessPointStartPosition := Parameters.ProcessPointStartPosition;
             Internal.RecoveryPar.StartOffset := Parameters.StartOffset;
             Internal.RecoveryPar.ResizeStart := Parameters.SyncPar.ResizeStart;
