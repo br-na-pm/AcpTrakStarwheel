@@ -173,6 +173,7 @@ FUNCTION_BLOCK slStarSync
                     Internal.BarrierReadInfo.Enable := 1;
                     Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
                 ELSE
+                    Internal.SyncFurtherInDone  := TRUE;
                     Internal.State := slSTAR_STATE_WAIT_TARGET;
                 END_IF;
             END_IF
