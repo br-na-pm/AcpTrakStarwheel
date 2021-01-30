@@ -24,18 +24,21 @@ FUNCTION ClosestSyncPocket
     END_FOR
     
     CurrentEvalPocket   := FirstSyncPocketIndex;
+    PrevEvalPocket      := FirstSyncPocketIndex;
     FOR i := 0 TO StarInternal.MaxTargetIndex DO
-        IF (CurrentEvalPocket = TangentPocketIndex) OR (StarInternal.PocketSync[CurrentEvalPocket].InSync) THEN
+        IF (CurrentEvalPocket = TangentPocketIndex) OR (StarInternal.PocketSync[CurrentEvalPocket].Sync) THEN
+            CurrentEvalPocket   := PrevEvalPocket;
             EXIT;
         ELSE 
             CurrentEvalPocketValid  := TRUE;
             ClosestSyncPocket   := CurrentEvalPocket;
         END_IF;
         
-        IF CurrentEvalPocket = StarInternal.MaxTargetIndex THEN
-            CurrentEvalPocket   := 0;
+        PrevEvalPocket  := CurrentEvalPocket;
+        IF CurrentEvalPocket = 0 THEN
+            CurrentEvalPocket   := StarInternal.MaxTargetIndex;
         ELSE
-            CurrentEvalPocket   := CurrentEvalPocket + 1;
+            CurrentEvalPocket   := CurrentEvalPocket - 1;
         END_IF;
     END_FOR;
     

@@ -382,7 +382,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Internal.Data.Sync.RecoveredCount < Internal.Data.Sync.PocketEvalCount THEN
                 IF NOT StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync THEN
                     StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Axis := Internal.Data.Sync.Axes[Internal.Data.Sync.RecoveredCount];
-                    StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync := 1;
+                    StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync := TRUE;
                     Internal.Data.Sync.RecoveredCount := Internal.Data.Sync.RecoveredCount + 1;
                 ELSE
                     Error := 1;
@@ -512,11 +512,13 @@ FUNCTION_BLOCK slStarRecovery
         
         slREC_STATE_BACKUP_ZONE_SYNC_FI:
             
+            StarInternal ACCESS Internal.Handle; 
+            
             IF (Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex <> slNO_CLOSEST_POCKET_FOUND) AND (Internal.Data.Backup.RecoveredCount <> Internal.Data.Backup.EvalCount) THEN
-                StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex]].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
-                StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.Data.Sync.RecoveredCount]].Sync := 1;
+                StarInternal.PocketSync[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
+                StarInternal.PocketSync[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex].Sync := TRUE;
                 Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
-                Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
+                Internal.State  := slREC_STATE_BACKUP_ZONE_TARGET;
             ELSE
                 Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished    := TRUE;
                 IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
