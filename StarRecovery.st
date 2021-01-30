@@ -195,7 +195,7 @@ FUNCTION_BLOCK slStarRecovery
             
             IF Enable THEN
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.Release.Position AND 
-                    Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.015) THEN
+                    Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset) THEN
                     Internal.State := slREC_STATE_SYN_ZONE_TARGET;
                 ELSE
                     Internal.State := slREC_STATE_BACKUP_ZONE_CHECK;
@@ -218,7 +218,7 @@ FUNCTION_BLOCK slStarRecovery
                         Internal.Data.Sync.ShuttleError := Internal.Data.Sync.ShuttleErrorNew;
                     END_IF;
                     //Ignore any pockets that are before the sync zone
-                    IF StarInternal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.015 THEN
+                    IF StarInternal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset THEN
                         Internal.Data.Sync.PocketEvalIndexValid := TRUE;
                         IF ABS(Internal.Data.Sync.ShuttleErrorNew) < ABS(Internal.Data.Sync.ShuttleError) THEN
                             Internal.Data.Sync.PocketEvalIndex := Internal.i;
@@ -303,7 +303,7 @@ FUNCTION_BLOCK slStarRecovery
             
             IF NOT Enable THEN
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition + Parameters.StartOffset - 0.015 AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN 
+            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition + Parameters.StartOffset AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN 
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN
                     Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.EvalCount]    := TRUE;
                 END_IF;          
