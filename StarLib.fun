@@ -28,6 +28,7 @@ END_FUNCTION
 		TangentPocketIndex : UINT;
 		FirstSyncPocketIndex : UINT;
 		CurrentEvalPocket : UINT;
+		PrevEvalPocket : UINT;
 		CurrentEvalPocketValid : BOOL;
 		i : USINT;
 	END_VAR

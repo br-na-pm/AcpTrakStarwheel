@@ -122,7 +122,12 @@ FUNCTION_BLOCK slStarSync
             
         slSTAR_STATE_RECOVER:
             
-            Internal.RecoveryPar.ShExtentToFront    := Parameters.ShExtentToFront;
+            Internal.RecoveryPar.StarDims.SectorTangentPos  := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
+            Internal.RecoveryPar.StarDims.StarwheelPocketCount  := Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount;
+            Internal.RecoveryPar.StarDims.StarwheelRadius  := Parameters.SyncPar.StarCalcTarget.StarwheelRadius;
+            Internal.RecoveryPar.SyncFurtherInEnabled   := TRUE;
+            Internal.RecoveryPar.SectorTangentPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
+            Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
             Internal.RecoveryPar.ProcessPointStartPosition := Parameters.ProcessPointStartPosition;
             Internal.RecoveryPar.StartOffset := Parameters.StartOffset;
             Internal.RecoveryPar.ResizeStart := Parameters.SyncPar.ResizeStart;
@@ -161,9 +166,43 @@ FUNCTION_BLOCK slStarSync
                 Internal.Recovery.Enable := 0;
                 Internal.TrgPointEnable.Enable := 1;
                 Active := 1;
-                Internal.State := slSTAR_STATE_WAIT_TARGET;
+                
+                Internal.NextSyncFITarget   := ClosestSyncPocket(Parameters.SyncPar.StarCalcTarget.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
+                IF Parameters.Recovery.SyncFurtherInEnabled AND Internal.NextSyncFITarget <> slNO_CLOSEST_POCKET_FOUND THEN
+                    Internal.BarrierReadInfo.Enable := 1;
+                    Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
+                ELSE
+                    Internal.State := slSTAR_STATE_WAIT_TARGET;
+                END_IF;
             END_IF
         
+        slSTAR_STATE_SYNCFI_TICKET_COUNT:
+     
+            IF NOT Enable THEN
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 THEN
+            
+                Internal.BarrierCommand.AdvancedParameters.TicketCount := 1;
+                Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
+                Internal.BarrierCommand.Execute := 1;
+                Internal.State := slSTAR_STATE_ADD_TICKET;
+            ELSE
+                Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
+            END_IF;
+            
+        slSTAR_STATE_SYNCFI_ADD_TICKET:
+                    
+            IF NOT Enable THEN
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.BarrierCommand.Error THEN
+                Error := 1;
+                ErrorID := Internal.BarrierCommand.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.BarrierCommand.Done THEN
+                Internal.BarrierCommand.Execute := 0;
+                Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
+            END_IF
+            
         slSTAR_STATE_WAIT_TARGET:
             
             IF NOT Enable THEN
@@ -274,12 +313,27 @@ FUNCTION_BLOCK slStarSync
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF Internal.TrgPointGetInfo.Done THEN
                 Internal.TrgPointGetInfo.Execute := 0;
-                IF Internal.TrgPointGetInfo.TrgPointInfo.Event = mcACPTRAK_TP_PASSED_POSITIVE THEN
-                    Internal.PocketSync[Internal.NextSyncTarget].Axis := Internal.TrgPointGetInfo.TrgPointInfo.Axis;
-                    Internal.PocketSync[Internal.NextSyncTarget].Sync := 1;
-                END_IF
-                Internal.NewOvertakeDetected := 0;
-                Internal.State := slSTAR_STATE_WAIT_TARGET;
+                IF Parameters.Recovery.SyncFurtherInEnabled AND NOT Internal.SyncFurtherInDone THEN
+                    IF Internal.TrgPointGetInfo.TrgPointInfo.Event = mcACPTRAK_TP_PASSED_POSITIVE THEN
+                        Internal.PocketSync[Internal.NextSyncFITarget].Axis := Internal.TrgPointGetInfo.TrgPointInfo.Axis;
+                        Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
+                    END_IF
+                    Internal.NextSyncFITarget   := ClosestSyncPocket(Parameters.SyncPar.StarCalcTarget.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
+                    IF Internal.NextSyncFITarget <> slNO_CLOSEST_POCKET_FOUND THEN
+                        Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
+                    ELSE
+                        Internal.SyncFurtherInDone  := TRUE;
+                        Internal.NewOvertakeDetected := 0;
+                        Internal.State := slSTAR_STATE_WAIT_TARGET;
+                    END_IF;
+                ELSE
+                    IF Internal.TrgPointGetInfo.TrgPointInfo.Event = mcACPTRAK_TP_PASSED_POSITIVE THEN
+                        Internal.PocketSync[Internal.NextSyncTarget].Axis := Internal.TrgPointGetInfo.TrgPointInfo.Axis;
+                        Internal.PocketSync[Internal.NextSyncTarget].Sync := 1;
+                    END_IF
+                    Internal.NewOvertakeDetected := 0;
+                    Internal.State := slSTAR_STATE_WAIT_TARGET;
+                END_IF;
             END_IF
             
         slSTAR_STATE_RESET_FB:
@@ -293,6 +347,7 @@ FUNCTION_BLOCK slStarSync
             Internal.BarrierCommand.Execute := 0;
             Internal.BarrierReadInfo.Enable := 0;
             Internal.Recovery.Enable := 0;
+            Internal.SyncFurtherInDone  := FALSE;
             Internal.ErrorID := ErrorID;
             FOR Internal.i := 0 TO slMAX_TARGET_IDX DO
                 Internal.PocketSync[Internal.i].Sync := 0;

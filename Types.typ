@@ -92,6 +92,12 @@ TYPE
 		Backup : slStarRecoveryParBackupType;
 		ShExtentToFront : LREAL;
 		SectorTangentPos : REAL;
+		StarDims : slStarRecoveryParStarDimsType; (*Starwheel dimensions*)
+	END_STRUCT;
+	slStarRecoveryParStarDimsType : 	STRUCT 
+		StarwheelRadius : REAL; (*Radius of the starwheel in mm*)
+		StarwheelPocketCount : USINT; (*Number of pockets on the starwheel*)
+		SectorTangentPos : REAL; (*Tangent position of the starwheel on the Trak sector*)
 	END_STRUCT;
 	slStarRecoveryParBackupType : 	STRUCT  (*Recovery Release Parameters*)
 		BackupTolerance : LREAL;
@@ -130,11 +136,15 @@ TYPE
 		State : slStarRecoveryStateEnum; (*State of execution*)
 		i : USINT; (*Index*)
 	END_STRUCT;
+	slStarRecoveryInternalDataFIType : 	STRUCT 
+		CurrentPocketIndex : UINT; (*Current pocket index being evaluated*)
+	END_STRUCT;
 	slStarRecoveryInternalDataType : 	STRUCT  (*Recovery data*)
 		Init : slStarRecoverylDataInitType; (*Initial recovery data*)
 		Sync : slStarRecoveryDataSyncType; (*Sync recovery data*)
 		Backup : slStarRecoveryDataBackupType; (*Backup recovery data*)
 		UserData : slStarRecoveryDataUserDataType;
+		SyncFurtherIn : slStarRecoveryInternalDataFIType;
 	END_STRUCT;
 	slStarRecoveryDataSyncFurInType : 	STRUCT 
 		LastSyncedPocket : USINT; (*Next open pocket available to sync further in*)
@@ -205,6 +215,7 @@ TYPE
 		slREC_STATE_BACKUP_SET_USERDATA, (*Set backup zone userdata*)
 		slREC_STATE_GET_USERDATA,
 		slREC_STATE_SET_USERDATA,
+		slREC_STATE_FI_WAIT_SHUTTLE, (*Wait for a new shuttle to come by*)
 		slREC_STATE_DONE, (*Recovery is complete*)
 		slREC_STATE_WAIT_NOT_BUSY, (*Wait for function blocks to report not busy*)
 		slREC_STATE_ERROR (*Error state*)
@@ -268,6 +279,8 @@ TYPE
 		PocketSyncBusy : BOOL; (*Temporary variable to determine if a pocket sync is still busy*)
 		PocketSyncError : BOOL; (*Temporary variable to determine if a pocket sync has an error*)
 		PocketSyncErrorID : DINT; (*Temporary variable to determine the pocket sync error ID*)
+		NextSyncFITarget : UINT; (*Next sync further in target found*)
+		SyncFurtherInDone : BOOL;
 	END_STRUCT;
 	slStarSyncStateEnum : 
 		( (*State of execution*)
@@ -281,6 +294,9 @@ TYPE
 		slSTAR_STATE_WAIT_SHUTTLE, (*Wait for the next shuttle to arrive*)
 		slSTAR_STATE_EVENT_INFO, (*Get event info*)
 		slSTAR_STATE_RESET_FB, (*Reset function blocks*)
+		slSTAR_STATE_SYNCFI_TICKET_COUNT,
+		slSTAR_STATE_SYNCFI_ADD_TICKET,
+		slSTAR_STATE_SYNCFI_WAIT_SHUTTLE,
 		slSTAR_STATE_OPEN_BARRIER, (*Open the barrier*)
 		slSTAR_STATE_WAIT_NOT_BUSY, (*Wait for function blocks to report not busy*)
 		slSTAR_STATE_ERROR (*An error occurred*)
