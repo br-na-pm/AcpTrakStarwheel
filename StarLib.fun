@@ -15,7 +15,7 @@ END_FUNCTION
 
 {REDUND_ERROR} FUNCTION ClosestSyncPocket : UINT (*Finds the closest pocket to the tangent point of the starwheel that a shuttle can sync to*) (*$GROUP=User,$CAT=User,$GROUPICON=User.png,$CATICON=User.png*)
 	VAR_INPUT
-		SectorTangentPos : LREAL; (*Tangent point of the starwheel*)
+		MeshZoneStartPos : LREAL; (*Tangent point of the starwheel*)
 		SyncZoneStartPos : LREAL; (*Start of the sync zone on the starwheel sector*)
 		Handle : UDINT; (*Starwheel internal data handle*)
 	END_VAR

@@ -83,6 +83,9 @@ FUNCTION_BLOCK slStarSync
                     
                 ELSE
                 
+                    Internal.PocketWidth        := 2 * slPI * Parameters.SyncPar.StarCalcTarget.StarwheelRadius / Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount;
+                    Internal.MeshZoneStartPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos - Internal.PocketWidth;
+                    
                     Internal.TrgPointEnable.ProcessPoint := ADR(ProcessPointStart);
                     
                     Internal.TrgPointGetInfo.ProcessPoint := ADR(ProcessPointStart);
@@ -122,9 +125,7 @@ FUNCTION_BLOCK slStarSync
             
         slSTAR_STATE_RECOVER:
             
-            Internal.RecoveryPar.StarDims.SectorTangentPos  := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
-            Internal.RecoveryPar.StarDims.StarwheelPocketCount  := Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount;
-            Internal.RecoveryPar.StarDims.StarwheelRadius  := Parameters.SyncPar.StarCalcTarget.StarwheelRadius;
+            Internal.RecoveryPar.MeshZoneStartPos   := Internal.MeshZoneStartPos;
             Internal.RecoveryPar.SyncFurtherInEnabled   := TRUE;
             Internal.RecoveryPar.SectorTangentPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
             Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
@@ -167,7 +168,7 @@ FUNCTION_BLOCK slStarSync
                 Internal.TrgPointEnable.Enable := 1;
                 Active := 1;
                 
-                Internal.NextSyncFITarget   := ClosestSyncPocket(Parameters.SyncPar.StarCalcTarget.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
+                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
                 IF Parameters.Recovery.SyncFurtherInEnabled AND Internal.NextSyncFITarget <> slNO_CLOSEST_POCKET_FOUND THEN
                     Internal.BarrierReadInfo.Enable := 1;
                     Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
@@ -318,7 +319,7 @@ FUNCTION_BLOCK slStarSync
                         Internal.PocketSync[Internal.NextSyncFITarget].Axis := Internal.TrgPointGetInfo.TrgPointInfo.Axis;
                         Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
                     END_IF
-                    Internal.NextSyncFITarget   := ClosestSyncPocket(Parameters.SyncPar.StarCalcTarget.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
+                    Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
                     IF Internal.NextSyncFITarget <> slNO_CLOSEST_POCKET_FOUND THEN
                         Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
                     ELSE

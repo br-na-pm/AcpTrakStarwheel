@@ -92,12 +92,7 @@ TYPE
 		Backup : slStarRecoveryParBackupType;
 		ShExtentToFront : LREAL;
 		SectorTangentPos : REAL;
-		StarDims : slStarRecoveryParStarDimsType; (*Starwheel dimensions*)
-	END_STRUCT;
-	slStarRecoveryParStarDimsType : 	STRUCT 
-		StarwheelRadius : REAL; (*Radius of the starwheel in mm*)
-		StarwheelPocketCount : USINT; (*Number of pockets on the starwheel*)
-		SectorTangentPos : REAL; (*Tangent position of the starwheel on the Trak sector*)
+		MeshZoneStartPos : LREAL; (*Starwheel dimensions*)
 	END_STRUCT;
 	slStarRecoveryParBackupType : 	STRUCT  (*Recovery Release Parameters*)
 		BackupTolerance : LREAL;
@@ -145,6 +140,7 @@ TYPE
 		Backup : slStarRecoveryDataBackupType; (*Backup recovery data*)
 		UserData : slStarRecoveryDataUserDataType;
 		SyncFurtherIn : slStarRecoveryInternalDataFIType;
+		PocketWidth : LREAL; (*Width of a pocket on the starwheel*)
 	END_STRUCT;
 	slStarRecoveryDataSyncFurInType : 	STRUCT 
 		LastSyncedPocket : USINT; (*Next open pocket available to sync further in*)
@@ -281,6 +277,8 @@ TYPE
 		PocketSyncErrorID : DINT; (*Temporary variable to determine the pocket sync error ID*)
 		NextSyncFITarget : UINT; (*Next sync further in target found*)
 		SyncFurtherInDone : BOOL;
+		MeshZoneStartPos : LREAL;
+		PocketWidth : LREAL;
 	END_STRUCT;
 	slStarSyncStateEnum : 
 		( (*State of execution*)

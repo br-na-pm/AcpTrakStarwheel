@@ -409,7 +409,7 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.BarrierCmd.Execute := TRUE;
                 Internal.State  := slREC_STATE_BACKUP_ZONE_BAROPEN;
             ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
-                Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.SectorTangentPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
+                Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
                 Internal.State  := slREC_STATE_BACKUP_ZONE_SYNC_FI;
             ELSIF StarInternal.NewOvertakeDetected THEN
                 StarInternal.NewOvertakeDetected := 0;

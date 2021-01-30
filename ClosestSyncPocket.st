@@ -1,18 +1,18 @@
 
-(* Finds the closest pocket to the tangent point of the starwheel that a shuttle can sync to *)
+(* Finds the closest pocket to the start of the mesh zone of the starwheel that a shuttle can sync to *)
 FUNCTION ClosestSyncPocket
     
     StarInternal ACCESS Handle;
     
     FOR i := 0 TO StarInternal.MaxTargetIndex DO
-        TangentPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - SectorTangentPos;
+        TangentPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - MeshZoneStartPos;
         FirstSyncPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - SyncZoneStartPos;
         IF i = 0 THEN
             TangentPocketLocationError := TangentPocketLocationErrorNew;
             FirstSyncPocketLocationError    := FirstSyncPocketLocationErrorNew;
         END_IF;
         
-        IF ABS(TangentPocketLocationErrorNew) < ABS(TangentPocketLocationError) THEN
+        IF ABS(TangentPocketLocationErrorNew) < ABS(TangentPocketLocationError) AND (StarInternal.PocketSync[i].TargetPosition <= MeshZoneStartPos) THEN
             TangentPocketIndex := i;
             TangentPocketLocationError := TangentPocketLocationErrorNew;
         END_IF
