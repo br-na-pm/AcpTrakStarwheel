@@ -93,6 +93,7 @@ TYPE
 		ShExtentToFront : LREAL;
 		SectorTangentPos : REAL;
 		MeshZoneStartPos : LREAL; (*Starwheel dimensions*)
+		MeshZoneEndPos : LREAL;
 	END_STRUCT;
 	slStarRecoveryParBackupType : 	STRUCT  (*Recovery Release Parameters*)
 		BackupTolerance : LREAL;
@@ -158,6 +159,9 @@ TYPE
 	slStarRecoveryDataSyncType : 	STRUCT  (*Sync recovery data*)
 		PocketEvalIndex : UINT; (*Pocket index to evaluate*)
 		PocketEvalIndexValid : BOOL;
+		NextClosestPocketIndex : UINT;
+		ClosestPocketTaken : BOOL;
+		NextClosestPocketTaken : BOOL;
 		PocketEvalCount : USINT; (*Number of pockets evaluated*)
 		Axes : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Sync axes*)
 		ShuttleErrors : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL;
@@ -169,10 +173,12 @@ TYPE
 	slStarRecoveryDataBackupType : 	STRUCT  (*Backup recovery data*)
 		EvalCount : USINT; (*Number of shuttles evaluated*)
 		Axes : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Axes found in the backup area*)
+		Positions : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL;
 		RecoveredCount : USINT; (*Number of shuttles recovered*)
 		IsBeforeBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicates if a shuttle is in the backup zone but before the barrier (have to move to gaurantee it won't get stuck at the barrier)*)
 		MovedToBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicated if a shuttle has been moved to the barrier location*)
 		SyncFurtherIn : slStarRecoveryDataBackupFIType;
+		Position : LREAL;
 	END_STRUCT;
 	slStarRecoveryDataBackupFIType : 	STRUCT  (*Sync further in type for backup zone*)
 		CurrentPocketIndex : UINT; (*Current pocket index being evaluated*)
@@ -278,6 +284,7 @@ TYPE
 		NextSyncFITarget : UINT; (*Next sync further in target found*)
 		SyncFurtherInDone : BOOL;
 		MeshZoneStartPos : LREAL;
+		MeshZoneEndPos : LREAL;
 		PocketWidth : LREAL;
 	END_STRUCT;
 	slStarSyncStateEnum : 
