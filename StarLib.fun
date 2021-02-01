@@ -34,13 +34,13 @@ END_FUNCTION
 	END_VAR
 END_FUNCTION
 
-{REDUND_ERROR} FUNCTION PocketOvertakeDetect : BOOL (*Returns the pocket index of pocket that has crossed a point input to the function*) (*$GROUP=User,$CAT=User,$GROUPICON=User.png,$CATICON=User.png*)
+{REDUND_ERROR} FUNCTION PocketOvertakeDetect : UINT (*Returns the pocket index of pocket that has crossed a point input to the function*) (*$GROUP=User,$CAT=User,$GROUPICON=User.png,$CATICON=User.png*)
 	VAR_INPUT
 		Handle : UDINT; (*Starwheel internal data handle*)
 		Position : LREAL; (*Position that is being monitored for an overtake*)
 	END_VAR
 	VAR
-		StarInternal : slStarSyncInternalType;
+		StarInternal : REFERENCE TO slStarSyncInternalType;
 		i : UINT;
 	END_VAR
 END_FUNCTION
