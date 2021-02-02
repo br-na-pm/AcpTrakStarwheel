@@ -413,7 +413,12 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- wait for pocket to come by
                 
             StarInternal ACCESS Internal.Handle; 
-            Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Internal.Data.Backup.Positions[Internal.Data.Backup.RecoveredCount]);
+            IF Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.RecoveredCount] THEN
+                Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Parameters.ProcessPointStartPosition); 
+            ELSE 
+                Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Internal.Data.Backup.Positions[Internal.Data.Backup.RecoveredCount]); 
+            END_IF;
+            
             ReadyForStart := 1;
             
             IF NOT Enable THEN
