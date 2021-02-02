@@ -248,11 +248,11 @@ FUNCTION_BLOCK slStarRecovery
                 
             //Check to see if there is another shuttle closer to this pocket, if so- try and sync to the next closest pocket
             IF NOT Internal.Data.Sync.ClosestPocketTaken THEN
-                IF Internal.Data.Sync.ShuttleError < StarInternal.PocketSync[Internal.i].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount + 1] THEN
+                IF Internal.Data.Sync.ShuttleError < ABS(StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount + 1]) THEN
                     Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.PocketEvalIndex;
                     Internal.Data.Sync.Axes[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
                     Internal.State := slREC_STATE_SYN_ZONE_RESIZE;
-                ELSIF NOT Internal.Data.Sync.NextClosestPocketTaken AND (Internal.Data.Sync.ShuttleError >= StarInternal.PocketSync[Internal.i].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount + 1]) THEN
+                ELSIF NOT Internal.Data.Sync.NextClosestPocketTaken AND (Internal.Data.Sync.ShuttleError >= ABS(StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount + 1])) THEN
                     Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.NextClosestPocketIndex;
                     Internal.Data.Sync.Axes[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
                     Internal.State := slREC_STATE_SYN_ZONE_RESIZE;
