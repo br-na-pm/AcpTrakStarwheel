@@ -179,6 +179,7 @@ TYPE
 		MovedToBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicated if a shuttle has been moved to the barrier location*)
 		SyncFurtherIn : slStarRecoveryDataBackupFIType;
 		Position : LREAL;
+		PocketOvertakeIndex : UINT;
 	END_STRUCT;
 	slStarRecoveryDataBackupFIType : 	STRUCT  (*Sync further in type for backup zone*)
 		CurrentPocketIndex : UINT; (*Current pocket index being evaluated*)
@@ -286,6 +287,7 @@ TYPE
 		MeshZoneStartPos : LREAL;
 		MeshZoneEndPos : LREAL;
 		PocketWidth : LREAL;
+		RecoveryDone : BOOL;
 	END_STRUCT;
 	slStarSyncStateEnum : 
 		( (*State of execution*)

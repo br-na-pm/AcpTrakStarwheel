@@ -22,7 +22,8 @@ FUNCTION_BLOCK slStarSync
                 Internal.LastTargetPosition[Internal.i] < Parameters.ProcessPointStartPosition + Parameters.StartOffset AND
                 Internal.PocketSync[Internal.i].TargetPosition < Parameters.SyncPar.StarCalcTarget.SectorTangentPos AND 
                 Internal.PocketSync[Internal.i].Active AND
-                NOT Internal.PocketSync[Internal.i].Sync THEN
+                NOT Internal.PocketSync[Internal.i].Sync 
+                AND Internal.RecoveryDone THEN
     			
                 Internal.PocketDisabled := 0;
                 IF DisablePockets AND (Parameters.Skip.NumDisabled > 0) THEN
@@ -166,6 +167,7 @@ FUNCTION_BLOCK slStarSync
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF Internal.Recovery.Done THEN
                 ReadyForStart := 1;
+                Internal.RecoveryDone   := TRUE;
                 Internal.Recovery.Enable := 0;
                 Internal.TrgPointEnable.Enable := 1;
                 Active := 1;
@@ -352,6 +354,7 @@ FUNCTION_BLOCK slStarSync
             Internal.BarrierReadInfo.Enable := 0;
             Internal.Recovery.Enable := 0;
             Internal.SyncFurtherInDone  := FALSE;
+            Internal.RecoveryDone   := FALSE;
             Internal.ErrorID := ErrorID;
             FOR Internal.i := 0 TO slMAX_TARGET_IDX DO
                 Internal.PocketSync[Internal.i].Sync := 0;

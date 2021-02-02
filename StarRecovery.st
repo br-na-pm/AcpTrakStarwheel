@@ -413,6 +413,7 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- wait for pocket to come by
                 
             StarInternal ACCESS Internal.Handle; 
+            Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Internal.Data.Backup.Positions[Internal.Data.Backup.RecoveredCount]);
             ReadyForStart := 1;
             
             IF NOT Enable THEN
@@ -425,7 +426,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
                 Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
                 Internal.State  := slREC_STATE_BACKUP_ZONE_SYNC_FI;
-            ELSIF PocketOvertakeDetect(Internal.Handle, Internal.Data.Backup.Positions[Internal.Data.Backup.RecoveredCount]) <> slNO_POCKET_DETECTED THEN
+            ELSIF Internal.Data.Backup.PocketOvertakeIndex <> slNO_POCKET_DETECTED THEN
                 Internal.ShResize.Axis := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);
                 Internal.ShResize.Command := mcACPTRAK_RESIZE_DIMENSIONS;
                 Internal.ShResize.ResizeParameter := Parameters.ResizeStart;
@@ -507,13 +508,13 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.State := slREC_STATE_ERROR;
             ELSIF Internal.ShResize.Done THEN
                 Internal.ShResize.Execute := 0;
-                IF StarInternal.PocketSync[StarInternal.NextSyncTarget].Sync THEN
+                IF StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Sync THEN
                     Error := 1;
                     ErrorID := slERR_TARGET_ALREADY_SYNCED;
                     Internal.State := slREC_STATE_ERROR;
                 ELSE
-                    StarInternal.PocketSync[StarInternal.NextSyncTarget].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
-                    StarInternal.PocketSync[StarInternal.NextSyncTarget].Sync := 1;
+                    StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
+                    StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Sync := 1;
                     Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
                     IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
                         Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
