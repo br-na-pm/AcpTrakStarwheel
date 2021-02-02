@@ -122,7 +122,7 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- Find shuttles in the release zone
             
             IF Enable THEN
-                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.Release.Position THEN
+                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.MeshZoneEndPos THEN
                     Internal.State := slREC_STATE_RELEASE_ZONE_RESIZE;
                 ELSE //Go to next section
                     Internal.State := slREC_STATE_SYN_ZONE_CHECK;
@@ -194,7 +194,7 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- Find shuttles in the sync zone
             
             IF Enable THEN
-                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.Release.Position AND 
+                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.MeshZoneEndPos AND 
                     Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset) THEN
                     Internal.State := slREC_STATE_SYN_ZONE_TARGET;
                 ELSE
@@ -207,10 +207,12 @@ FUNCTION_BLOCK slStarRecovery
         slREC_STATE_SYN_ZONE_TARGET:
             // ----------------------------------------------------------------------- Find the closest pocket to it and see if it is in tolerance 
                 
+            //TODO: Replace with function
             //Find the closest pocket to to the shuttle
             StarInternal ACCESS Internal.Handle;
             Internal.Data.Sync.PocketEvalIndex  := 0;
             Internal.Data.Sync.PocketEvalIndexValid := FALSE;
+            Internal.Data.Sync.NextClosestPocketIndex   := 0;
             IF StarInternal.MaxTargetIndex > 0 THEN
                 FOR Internal.i := 0 TO StarInternal.MaxTargetIndex DO
                     Internal.Data.Sync.ShuttleErrorNew := StarInternal.PocketSync[Internal.i].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount];
@@ -221,6 +223,7 @@ FUNCTION_BLOCK slStarRecovery
                     IF StarInternal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset THEN
                         Internal.Data.Sync.PocketEvalIndexValid := TRUE;
                         IF ABS(Internal.Data.Sync.ShuttleErrorNew) < ABS(Internal.Data.Sync.ShuttleError) THEN
+                            Internal.Data.Sync.NextClosestPocketIndex   := Internal.Data.Sync.PocketEvalIndex;
                             Internal.Data.Sync.PocketEvalIndex := Internal.i;
                             Internal.Data.Sync.ShuttleError := Internal.Data.Sync.ShuttleErrorNew;
                         END_IF
@@ -236,32 +239,42 @@ FUNCTION_BLOCK slStarRecovery
             IF Internal.Data.Sync.PocketEvalCount > 0 THEN
                 FOR Internal.i := 0 TO Internal.Data.Sync.PocketEvalCount - 1 DO
                     IF Internal.Data.Sync.PocketIndices[Internal.i] = Internal.Data.Sync.PocketEvalIndex THEN
-                        IF NOT Error THEN
-                            Error := 1;
-                            ErrorID := slERR_TARGET_ALREADY_SYNCED;
-                            Internal.State := slREC_STATE_ERROR;
-                        END_IF
+                        Internal.Data.Sync.ClosestPocketTaken   := TRUE;
+                    ELSIF Internal.Data.Sync.PocketIndices[Internal.i] = Internal.Data.Sync.NextClosestPocketIndex THEN
+                        Internal.Data.Sync.NextClosestPocketTaken   := TRUE;
                     END_IF
                 END_FOR
             END_IF
                 
-            IF NOT Error THEN
-                //Check to see if the pocket is within tolerance and that the pocket index has not already been used
-                IF ABS(Internal.Data.Sync.ShuttleError) <= Parameters.PocketErrorTolerance THEN
+            //Check to see if there is another shuttle closer to this pocket, if so- try and sync to the next closest pocket
+            IF NOT Internal.Data.Sync.ClosestPocketTaken THEN
+                IF Internal.Data.Sync.ShuttleError < ABS(StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount + 1]) THEN
+                    Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.PocketEvalIndex;
                     Internal.Data.Sync.Axes[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
-                    Internal.State := slREC_STATE_SYN_ZONE_RESIZE;         
-                ELSE //Throw error- Closest pocket too far away 
+                    Internal.State := slREC_STATE_SYN_ZONE_RESIZE;
+                ELSIF NOT Internal.Data.Sync.NextClosestPocketTaken AND (Internal.Data.Sync.ShuttleError >= ABS(StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount + 1])) THEN
+                    Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.NextClosestPocketIndex;
+                    Internal.Data.Sync.Axes[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
+                    Internal.State := slREC_STATE_SYN_ZONE_RESIZE;
+                ELSE
                     Error := 1;
-                    ErrorID := slERR_TARGET_OUT_OF_TOL;
+                    ErrorID := slERR_TARGET_ALREADY_SYNCED;
                     Internal.State := slREC_STATE_ERROR;
                 END_IF;
-            END_IF
+            ELSIF NOT Internal.Data.Sync.NextClosestPocketTaken THEN
+                Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.NextClosestPocketIndex;
+                Internal.Data.Sync.Axes[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
+                Internal.State := slREC_STATE_SYN_ZONE_RESIZE;
+            ELSIF Internal.Data.Sync.NextClosestPocketTaken THEN
+                Error := 1;
+                ErrorID := slERR_TARGET_ALREADY_SYNCED;
+                Internal.State := slREC_STATE_ERROR;
+            END_IF;
                 
         slREC_STATE_SYN_ZONE_RESIZE:
             // -----------------------------------------------------------------------             
             
             IF Enable THEN
-                Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.PocketEvalIndex;
         
                 Internal.ShResize.Axis := ADR(Internal.Data.Sync.Axes[Internal.Data.Sync.PocketEvalCount]);
                 Internal.ShResize.Command := mcACPTRAK_RESIZE_DIMENSIONS;
@@ -308,6 +321,7 @@ FUNCTION_BLOCK slStarRecovery
                     Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.EvalCount]    := TRUE;
                 END_IF;          
                 Internal.Data.Backup.Axes[Internal.Data.Backup.EvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
+                Internal.Data.Backup.Positions[Internal.Data.Backup.EvalCount] := Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount];
                 Internal.Data.Backup.EvalCount := Internal.Data.Backup.EvalCount + 1;
                 Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
                 IF Internal.Data.Init.ShuttleEvalCount >= Internal.Data.Init.NumShuttles THEN
@@ -399,6 +413,12 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- wait for pocket to come by
                 
             StarInternal ACCESS Internal.Handle; 
+            IF Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.RecoveredCount] THEN
+                Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Parameters.ProcessPointStartPosition); 
+            ELSE 
+                Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Internal.Data.Backup.Positions[Internal.Data.Backup.RecoveredCount]); 
+            END_IF;
+            
             ReadyForStart := 1;
             
             IF NOT Enable THEN
@@ -411,8 +431,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
                 Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
                 Internal.State  := slREC_STATE_BACKUP_ZONE_SYNC_FI;
-            ELSIF StarInternal.NewOvertakeDetected THEN
-                StarInternal.NewOvertakeDetected := 0;
+            ELSIF Internal.Data.Backup.PocketOvertakeIndex <> slNO_POCKET_DETECTED THEN
                 Internal.ShResize.Axis := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);
                 Internal.ShResize.Command := mcACPTRAK_RESIZE_DIMENSIONS;
                 Internal.ShResize.ResizeParameter := Parameters.ResizeStart;
@@ -494,13 +513,13 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.State := slREC_STATE_ERROR;
             ELSIF Internal.ShResize.Done THEN
                 Internal.ShResize.Execute := 0;
-                IF StarInternal.PocketSync[StarInternal.NextSyncTarget].Sync THEN
+                IF StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Sync THEN
                     Error := 1;
                     ErrorID := slERR_TARGET_ALREADY_SYNCED;
                     Internal.State := slREC_STATE_ERROR;
                 ELSE
-                    StarInternal.PocketSync[StarInternal.NextSyncTarget].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
-                    StarInternal.PocketSync[StarInternal.NextSyncTarget].Sync := 1;
+                    StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
+                    StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Sync := 1;
                     Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
                     IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
                         Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
