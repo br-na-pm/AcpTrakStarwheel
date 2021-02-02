@@ -5,13 +5,13 @@ FUNCTION PocketOvertakeDetect
     StarInternal ACCESS Handle;
     
     FOR i := 0 TO StarInternal.MaxTargetIndex DO
-        IF StarInternal.PocketSync[Internal.i].TargetPosition >= Position AND
-            StarInternal.LastTargetPosition[Internal.i] < Position AND 
-            StarInternal.PocketSync[Internal.i].Active AND
-            NOT StarInternal.PocketSync[Internal.i].Sync THEN
+        IF StarInternal.PocketSync[i].TargetPosition >= Position AND
+            StarInternal.LastTargetPosition[i] < Position AND 
+            StarInternal.PocketSync[i].Active AND
+            NOT StarInternal.PocketSync[i].Sync THEN
     			
             PocketOvertakeDetect := i;
-            RETURN
+            RETURN;
         END_IF
     END_FOR
     
