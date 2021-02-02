@@ -127,8 +127,8 @@ FUNCTION_BLOCK slStarSync
         slSTAR_STATE_RECOVER:
             
             Internal.RecoveryPar.MeshZoneStartPos   := Internal.MeshZoneStartPos;
+            Internal.RecoveryPar.SyncFurtherInEnabled   := Parameters.Recovery.SyncFurtherInEnabled;
             Internal.RecoveryPar.MeshZoneEndPos     := Internal.MeshZoneEndPos;
-            Internal.RecoveryPar.SyncFurtherInEnabled   := TRUE;
             Internal.RecoveryPar.SectorTangentPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
             Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
             Internal.RecoveryPar.ProcessPointStartPosition := Parameters.ProcessPointStartPosition;
