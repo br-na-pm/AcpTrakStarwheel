@@ -86,7 +86,7 @@ FUNCTION_BLOCK slStarSync
                 
                     Internal.PocketWidth        := 2 * slPI * Parameters.SyncPar.StarCalcTarget.StarwheelRadius / Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount;
                     Internal.MeshZoneStartPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos - Internal.PocketWidth*0.75;
-                    Internal.MeshZoneEndPos     := Parameters.SyncPar.StarCalcTarget.SectorTangentPos + Internal.PocketWidth*0.75;
+                    Internal.MeshZoneEndPos     := Parameters.SyncPar.StarCalcTarget.SectorTangentPos + Internal.PocketWidth;
                     
                     Internal.TrgPointEnable.ProcessPoint := ADR(ProcessPointStart);
                     
