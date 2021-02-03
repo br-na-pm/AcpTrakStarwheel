@@ -1,3 +1,11 @@
+
+TYPE
+	FindClosestPcketSynReturnType : 	STRUCT 
+		ClosestPocket : UINT;
+		NextClosestPocket : UINT;
+	END_STRUCT;
+END_TYPE
+
 (*Star Target Calculations*)
 
 TYPE
@@ -137,6 +145,7 @@ TYPE
 	END_STRUCT;
 	slStarRecoveryInternalDataType : 	STRUCT  (*Recovery data*)
 		Init : slStarRecoverylDataInitType; (*Initial recovery data*)
+		Mesh : slStarRecoveryDataMeshType;
 		Sync : slStarRecoveryDataSyncType; (*Sync recovery data*)
 		Backup : slStarRecoveryDataBackupType; (*Backup recovery data*)
 		UserData : slStarRecoveryDataUserDataType;
@@ -156,6 +165,21 @@ TYPE
 		NumShuttles : UINT; (*Number of shuttles found at initialization*)
 		ShuttleEvalCount : USINT; (*Number of shuttles found at initialization that have been evalueated*)
 	END_STRUCT;
+	slStarRecoveryDataMeshType : 	STRUCT  (*Sync recovery data*)
+		PocketEvalIndex : UINT; (*Pocket index to evaluate*)
+		PocketEvalIndexValid : BOOL;
+		NextClosestPocketIndex : UINT;
+		ClosestPocketTaken : BOOL;
+		NextClosestPocketTaken : BOOL;
+		PocketEvalCount : USINT; (*Number of pockets evaluated*)
+		Axes : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Sync axes*)
+		ShuttleErrors : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL;
+		PocketIndices : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF UINT; (*Pocket indices assigned to the sync axes*)
+		ShuttleError : LREAL; (*Distance from shuttle to pocket*)
+		ShuttleErrorNew : LREAL; (*New distance from shuttle to pocket*)
+		NextClosestPocketError : LREAL;
+		RecoveredCount : UINT; (*Number of shuttles recovered*)
+	END_STRUCT;
 	slStarRecoveryDataSyncType : 	STRUCT  (*Sync recovery data*)
 		PocketEvalIndex : UINT; (*Pocket index to evaluate*)
 		PocketEvalIndexValid : BOOL;
@@ -169,6 +193,17 @@ TYPE
 		ShuttleError : LREAL; (*Distance from shuttle to pocket*)
 		ShuttleErrorNew : LREAL; (*New distance from shuttle to pocket*)
 		RecoveredCount : UINT; (*Number of shuttles recovered*)
+		ShuttlePos : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL; (*Shuttle positions found at initialization*)
+		SyncFurtherIn : slStarRecoveryDataSyncFIType;
+		NextClosestPocketError : LREAL;
+	END_STRUCT;
+	slStarRecoveryDataSyncFIType : 	STRUCT 
+		ClosestPocketToMeshFound : BOOL;
+		ClosestPocketToMesh : UINT;
+		NoClosestPocketFound : BOOL;
+		FirstPocketInMeshIndex : UINT;
+		FirstShuttleInMeshError : LREAL;
+		FirstSyncPocketError : LREAL;
 	END_STRUCT;
 	slStarRecoveryDataBackupType : 	STRUCT  (*Backup recovery data*)
 		EvalCount : USINT; (*Number of shuttles evaluated*)
@@ -196,6 +231,10 @@ TYPE
 		slREC_STATE_RELEASE_ZONE_RESIZE, (*Resize shuttles in the release zone*)
 		slREC_STATE_RELEASE_ZONE_SEND, (*Send shuttles in the release zone*)
 		slREC_STATE_RELEASE_ZONE_NEXT, (*Get the next shuttle in the release zone*)
+		slREC_STATE_MESH_ZONE_CHECK, (*Check for shuttles in the sync zone*)
+		slREC_STATE_MESH_ZONE_TARGET, (*Assign target for sync*)
+		slREC_STATE_MESH_ZONE_RESIZE, (*Resize shuttles*)
+		slREC_STATE_MESH_ZONE_NEXT, (*Get the next shuttle in the sync zone*)
 		slREC_STATE_SYN_ZONE_CHECK, (*Check for shuttles in the sync zone*)
 		slREC_STATE_SYN_ZONE_TARGET, (*Assign target for sync*)
 		slREC_STATE_SYN_ZONE_RESIZE, (*Resize shuttles*)
@@ -206,6 +245,7 @@ TYPE
 		slREC_STATE_PBACKUP_ZONE_NEXT, (*Get the next shuttle in the backup zone*)
 		slREC_STATE_PBCKUP_ZNE_USR_DATAG, (*Get the next shuttle in the backup zone*)
 		slREC_STATE_SYN_ZONE_SYNC, (*Sync shuttles in the sync zone*)
+		slREC_STATE_MESH_ZONE_SYNC, (*Sync shuttles in the sync zone*)
 		slREC_STATE_SYN_GET_USERDATA, (*Get sync zone userdata*)
 		slREC_STATE_SYN_SET_USERDATA, (*Set sync zone userdata*)
 		slREC_STATE_BACKUP_ZONE_TARGET, (*Wait for a target for shuttle in backup zone*)

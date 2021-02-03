@@ -16,6 +16,7 @@
     <File Description="StarDiagStateTrace Implementation">StarDiagStateTrace.st</File>
     <File>ClosestSyncPocket.st</File>
     <File>PocketOvertakeDetect.st</File>
+    <File>FindClosestPocketSyncZone.st</File>
   </Files>
   <Dependencies>
     <Dependency ObjectName="AsBrMath" />
