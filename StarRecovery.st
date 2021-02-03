@@ -232,8 +232,8 @@ FUNCTION_BLOCK slStarRecovery
                         IF ABS(Internal.Data.Mesh.ShuttleErrorNew) < ABS(Internal.Data.Mesh.ShuttleError) THEN
                             Internal.Data.Mesh.NextClosestPocketIndex   := Internal.Data.Mesh.PocketEvalIndex;
                             Internal.Data.Mesh.PocketEvalIndex := Internal.i;
+                            Internal.Data.Mesh.NextClosestPocketError := Internal.Data.Mesh.ShuttleError;
                             Internal.Data.Mesh.ShuttleError := Internal.Data.Mesh.ShuttleErrorNew;
-                            Internal.Data.Mesh.NextClosestPocketError := Internal.Data.Mesh.ShuttleErrorNew;
                         ELSIF ABS(Internal.Data.Mesh.ShuttleErrorNew) < ABS(Internal.Data.Mesh.NextClosestPocketError) AND Internal.i <> 0 THEN
                             Internal.Data.Mesh.NextClosestPocketIndex   := Internal.i;
                             Internal.Data.Mesh.NextClosestPocketError := Internal.Data.Mesh.ShuttleErrorNew;
@@ -399,6 +399,7 @@ FUNCTION_BLOCK slStarRecovery
                         IF ABS(Internal.Data.Sync.ShuttleErrorNew) < ABS(Internal.Data.Sync.ShuttleError) THEN
                             Internal.Data.Sync.NextClosestPocketIndex   := Internal.Data.Sync.PocketEvalIndex;
                             Internal.Data.Sync.PocketEvalIndex := Internal.i;
+                            Internal.Data.Sync.NextClosestPocketError := Internal.Data.Sync.ShuttleError;
                             Internal.Data.Sync.ShuttleError := Internal.Data.Sync.ShuttleErrorNew;
                         ELSIF ABS(Internal.Data.Sync.ShuttleErrorNew) < ABS(Internal.Data.Sync.NextClosestPocketError) AND Internal.i <> 0 THEN
                             Internal.Data.Sync.NextClosestPocketIndex   := Internal.i;
