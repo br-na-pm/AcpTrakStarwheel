@@ -114,7 +114,7 @@ FUNCTION_BLOCK slStarRecovery
                     Internal.State := slREC_STATE_GET_SHUTTLES;
                 ELSE
                     Internal.SecGetShuttle.Enable := FALSE;
-                    Internal.State := slREC_STATE_RELEASE_ZONE_CHECK;
+                    Internal.State := slREC_STATE_GET_USERDATA;
                 END_IF
             END_IF
             
@@ -186,7 +186,7 @@ FUNCTION_BLOCK slStarRecovery
                 IF Internal.Data.Init.ShuttleEvalCount < Internal.Data.Init.NumShuttles THEN
                     Internal.State := slREC_STATE_RELEASE_ZONE_CHECK;
                 ELSE
-                    Internal.State := slREC_STATE_GET_USERDATA;
+                    Internal.State := slREC_STATE_DONE;
                 END_IF;
             END_IF
             
@@ -591,7 +591,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Internal.Data.Backup.EvalCount <> 0 THEN
                 Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
             ELSE
-                Internal.State := slREC_STATE_GET_USERDATA;
+                Internal.State := slREC_STATE_DONE;
             END_IF
             
         slREC_STATE_SYN_ZONE_SYNC:        
@@ -610,7 +610,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Internal.Data.Backup.EvalCount <> 0 THEN
                 Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
             ELSE
-                Internal.State := slREC_STATE_GET_USERDATA;
+                Internal.State := slREC_STATE_DONE;
             END_IF
             
         slREC_STATE_BACKUP_ZONE_TARGET:
@@ -728,7 +728,7 @@ FUNCTION_BLOCK slStarRecovery
                     IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
                         Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
                     ELSE
-                        Internal.State := slREC_STATE_GET_USERDATA;
+                        Internal.State := slREC_STATE_DONE;
                     END_IF
                 END_IF
             END_IF
@@ -747,7 +747,7 @@ FUNCTION_BLOCK slStarRecovery
                 IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
                     Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
                 ELSE
-                    Internal.State := slREC_STATE_GET_USERDATA;
+                    Internal.State := slREC_STATE_DONE;
                 END_IF
             END_IF;
             
@@ -808,7 +808,7 @@ FUNCTION_BLOCK slStarRecovery
                 IF Internal.Data.UserData.UserDataWriteCount < Internal.Data.Init.NumShuttles THEN
                     Internal.State := slREC_STATE_GET_USERDATA;
                 ELSE
-                    Internal.State := slREC_STATE_DONE;
+                    Internal.State := slREC_STATE_RELEASE_ZONE_CHECK;
                 END_IF
                     
             END_IF
