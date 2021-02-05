@@ -1,5 +1,7 @@
 
 FUNCTION_BLOCK slStarSync
+	
+	
     
     //Check for an error on a pocket
     Internal.PocketSyncError := 0;
@@ -27,7 +29,7 @@ FUNCTION_BLOCK slStarSync
     			
                 Internal.PocketDisabled := 0;
                 IF DisablePockets AND (Parameters.Skip.NumDisabled > 0) THEN
-                    FOR Internal.n := 0 TO MIN(Parameters.Skip.NumDisabled - 1, slMAX_DISABLE_POCKET_IDX) DO
+					FOR Internal.n := 0 TO MIN(Parameters.Skip.NumDisabled - 1, slMAX_DISABLE_POCKET_IDX) DO
                         IF Parameters.Skip.DisabledIdx[Internal.n] = (Internal.i MOD (Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount)) THEN
                             Internal.PocketDisabled := 1;
                             EXIT;
@@ -97,12 +99,13 @@ FUNCTION_BLOCK slStarSync
                     Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_CLOSE;
                     Internal.BarrierCommand.Execute := 1;
                     
-                    Internal.BarrierReadInfo.ProcessPoint := ADR(ProcessPointStart);
-                    
+					Internal.BarrierReadInfo.ProcessPoint := ADR(ProcessPointStart);
+					                    
                     FOR Internal.i := 0 TO slMAX_TARGET_IDX  DO
                         Internal.PocketSync[Internal.i].TargetIndex := UINT_TO_USINT(Internal.i);
                         Internal.PocketSync[Internal.i].PeriodCount := Internal.PeriodCount;
-                        Internal.PocketSync[Internal.i].Parameters := ADR(Parameters.SyncPar);
+						Internal.PocketSync[Internal.i].Parameters := ADR(Parameters.SyncPar);
+						Internal.PocketSync[Internal.i].CalcData := ADR(Internal.StarCalcData);
                         Internal.PocketSync[Internal.i].Enable := (Internal.i <= Internal.MaxTargetIndex);
                     END_FOR
                 
@@ -409,7 +412,30 @@ FUNCTION_BLOCK slStarSync
                 Internal.State := slSTAR_STATE_OPEN_BARRIER;
             END_IF
         
-    END_CASE
+	END_CASE
+	
+		
+	IF Enable THEN
+		IF Parameters.SyncPar.StarCalcTarget.StarwheelPeriod <> 0 THEN			
+			//Calculate latency compensation
+			Internal.StarCalcData.StarPosPredict := StarwheelPosition + StarwheelVelocity * TIME_TO_REAL(Parameters.SyncPar.StarCalcTarget.DeltaT) / 1000.0;
+			Internal.StarCalcData.StarPosPredict := EuclideanModuloFLT(Internal.StarCalcData.StarPosPredict, Parameters.SyncPar.StarCalcTarget.StarwheelPeriod);
+		END_IF
+		
+		//Detect starwheel position rollover
+		IF (Internal.StarCalcData.StarPosPredict - Internal.OldStarPosPredict) > (Parameters.SyncPar.StarCalcTarget.StarwheelPeriod / 4.0) THEN //Rollover backwards
+			Internal.StarCalcData.CurrentStarwheelPeriod := Internal.StarCalcData.CurrentStarwheelPeriod - 1;
+		ELSIF (Internal.OldStarPosPredict - Internal.StarCalcData.StarPosPredict) > (Parameters.SyncPar.StarCalcTarget.StarwheelPeriod / 4.0) THEN //Rollover forwards
+			Internal.StarCalcData.CurrentStarwheelPeriod := Internal.StarCalcData.CurrentStarwheelPeriod + 1;
+		END_IF
+        
+		// Constrain CurrentStarwheelPeriod to {0..Sector.Par.PeriodCount-1}, EuclideanModulo deals with negatives correctly versus standard truncated form 
+		Internal.StarCalcData.CurrentStarwheelPeriod := EuclideanModuloINT(Internal.StarCalcData.CurrentStarwheelPeriod, Internal.PeriodCount);
+		Internal.StarCalcData.MultiturnPosition := Internal.StarCalcData.StarPosPredict + (INT_TO_REAL(Internal.StarCalcData.CurrentStarwheelPeriod) * Parameters.SyncPar.StarCalcTarget.StarwheelPeriod);	
+	END_IF
+	
+	//Capture old starwheel predict position
+	Internal.OldStarPosPredict := Internal.StarCalcData.StarPosPredict;
     
     Internal.TrgPointEnable();
     Internal.TrgPointGetInfo();

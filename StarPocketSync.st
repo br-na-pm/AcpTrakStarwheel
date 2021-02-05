@@ -16,7 +16,8 @@ FUNCTION_BLOCK slStarPocketSync
                 Busy := 1;
                 
                 Internal.StarCalcTarget.TargetIndex := TargetIndex;
-                Internal.StarCalcTarget.PeriodCount := PeriodCount;
+				Internal.StarCalcTarget.PeriodCount := PeriodCount;
+				Internal.StarCalcTarget.CalcData := ADR(CalcData);
                 Internal.StarCalcTarget.Parameters := ADR(Parameters.StarCalcTarget);
                 Internal.StarCalcTarget.Enable := 1;
                 

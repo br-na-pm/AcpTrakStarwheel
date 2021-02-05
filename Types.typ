@@ -297,6 +297,11 @@ TYPE
 		NumDisabled : USINT; (*Number of disabled pockets*)
 		DisabledIdx : ARRAY[0..slMAX_DISABLE_POCKET_IDX]OF USINT; (*Disabled pockets*)
 	END_STRUCT;
+	slStarSyncCalcDataType : 	STRUCT 
+		StarPosPredict : REAL; (*Current starwheel position + predictive compensation*)
+		CurrentStarwheelPeriod : INT; (*Current period of the 'real' starwheel, used to calculate a multiturn position*)
+		MultiturnPosition : REAL; (*Current position of the 'virtual' starwheel*)
+	END_STRUCT;
 	slStarSyncInternalType : 	STRUCT  (*Internal Data*)
 		TypeID : UDINT; (*Internal data type ID*)
 		ErrorID : DINT; (*Last recorded error ID*)
@@ -328,6 +333,8 @@ TYPE
 		MeshZoneEndPos : LREAL;
 		PocketWidth : LREAL;
 		RecoveryDone : BOOL;
+		StarCalcData : slStarSyncCalcDataType; (*Includes Calc Target information that is Starwheel-specific, rather than Pocket-specific*)
+		OldStarPosPredict : REAL; (*Star Position, including predictive compensation, from last cycle*)
 	END_STRUCT;
 	slStarSyncStateEnum : 
 		( (*State of execution*)
