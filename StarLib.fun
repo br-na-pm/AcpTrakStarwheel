@@ -66,6 +66,7 @@ FUNCTION_BLOCK slStarCalcTarget (*Synchronous function block that calculates the
 		Enable : BOOL; (*Calculate when true*)
 		StarwheelPosition : {REDUND_UNREPLICABLE} REAL; (*Position of the starwheel in degrees*)
 		StarwheelVelocity : {REDUND_UNREPLICABLE} REAL; (*Velocity of the starwheel in degrees per second*)
+		CalcData : REFERENCE TO slStarSyncCalcDataType;
 		Parameters : REFERENCE TO slStarCalcTargetParType; (*Calculation parameters*)
 	END_VAR
 	VAR_OUTPUT
@@ -86,6 +87,7 @@ FUNCTION_BLOCK slStarPocketSync (*Synchronize a shuttle with a pocket*)
 		Enable : BOOL; (*Enable syncing to the pocket*)
 		Axis : {REDUND_UNREPLICABLE} McAxisType; (*Shuttle to sync with pocket*)
 		Sync : BOOL; (*Synchronize on rising edge*)
+		CalcData : REFERENCE TO slStarSyncCalcDataType;
 		Parameters : REFERENCE TO slStarPocketSyncParType; (*Pocket Sync Parameters*)
 		StarwheelPosition : REAL; (*Position of the starwheel in degrees*)
 		StarwheelVelocity : REAL; (*Velocity of the starwheel in degrees per second*)
