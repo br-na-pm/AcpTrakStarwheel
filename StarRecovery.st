@@ -342,8 +342,14 @@ FUNCTION_BLOCK slStarRecovery
                                 Internal.Data.Sync.SyncFurtherIn.FirstPocketInMeshIndex    := Internal.Data.Sync.PocketEvalIndex - 1;
                             END_IF;
                             
-                            IF (Internal.Data.Mesh.PocketEvalCount > 0 AND (Internal.Data.Mesh.PocketIndices[Internal.Data.Mesh.PocketEvalCount - 1] <> Internal.Data.Sync.SyncFurtherIn.FirstPocketInMeshIndex)) OR
-                                Internal.Data.Mesh.PocketEvalCount = 0 THEN
+                            IF Internal.Data.Mesh.PocketEvalCount = 0 THEN
+                                //EDGE CASE: Still syncs a shuttle to a pocket 
+                                Internal.Data.Sync.SyncFurtherIn.FirstShuttleInMeshError    := ABS(StarInternal.PocketSync[Internal.Data.Sync.SyncFurtherIn.FirstPocketInMeshIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount]);
+                                Internal.Data.Sync.SyncFurtherIn.FirstSyncPocketError       := ABS(StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount]);
+                                IF (Internal.Data.Sync.SyncFurtherIn.FirstShuttleInMeshError < Internal.Data.Sync.SyncFurtherIn.FirstSyncPocketError) THEN
+                                    Internal.Data.Sync.PocketEvalIndex  := Internal.Data.Sync.SyncFurtherIn.FirstPocketInMeshIndex;
+                                END_IF;
+                            ELSIF (Internal.Data.Mesh.PocketIndices[Internal.Data.Mesh.PocketEvalCount - 1] <> Internal.Data.Sync.SyncFurtherIn.FirstPocketInMeshIndex) THEN
                                 //EDGE CASE: Still syncs a shuttle to a pocket 
                                 Internal.Data.Sync.SyncFurtherIn.FirstShuttleInMeshError    := ABS(StarInternal.PocketSync[Internal.Data.Sync.SyncFurtherIn.FirstPocketInMeshIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount]);
                                 Internal.Data.Sync.SyncFurtherIn.FirstSyncPocketError       := ABS(StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition - Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount]);
