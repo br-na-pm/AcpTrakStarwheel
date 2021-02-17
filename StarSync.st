@@ -57,14 +57,17 @@ FUNCTION_BLOCK slStarSync
 
     CASE Internal.State OF
         
+        slSTAR_STATE_INIT:
+            
+            Handle := ADR(Internal);
+            Internal.TypeID := slSTAR_INTERNAL_TYPE_ID;
+            Internal.State := slSTAR_STATE_IDLE;
+            
         slSTAR_STATE_IDLE:
             
             IF Enable THEN
                 
                 Busy := 1;
-                
-                Handle := ADR(Internal);
-                Internal.TypeID := slSTAR_INTERNAL_TYPE_ID;
                 
                 // Calculate how many periods of starwheel rotation we should calculate track positions for,
                 // in order to cover the area from SyncPP TO ReleasePP
