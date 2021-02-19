@@ -338,6 +338,7 @@ TYPE
 	END_STRUCT;
 	slStarSyncStateEnum : 
 		( (*State of execution*)
+		slSTAR_STATE_INIT, (*Initialize handle and data*)
 		slSTAR_STATE_IDLE, (*Idle state*)
 		slSTAR_STATE_CLOSE_BARRIER, (*Close the barrier*)
 		slSTAR_STATE_RECOVER, (*Recover shuttles*)
