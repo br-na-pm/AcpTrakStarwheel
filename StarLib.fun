@@ -45,20 +45,6 @@ END_FUNCTION
 	END_VAR
 END_FUNCTION
 
-{REDUND_ERROR} FUNCTION FindClosestPocketSyncZone : UINT (*Finds the closest pocket to a shuttle that is in the sync zone*) (*$GROUP=User,$CAT=User,$GROUPICON=User.png,$CATICON=User.png*)
-	VAR_INPUT
-		Handle : UDINT;
-	END_VAR
-	VAR
-		StarInternal : REFERENCE TO slStarSyncInternalType;
-		ClosestPocketIndex : UINT;
-		NextClosestPocketIndex : UINT;
-		ShuttleError : LREAL;
-		ShuttleErrorNew : LREAL;
-		i : UINT;
-	END_VAR
-END_FUNCTION
-
 FUNCTION_BLOCK slStarCalcTarget (*Synchronous function block that calculates the position of the sync positions*)
 	VAR_INPUT
 		TargetIndex : USINT; (*Index to generate a position for*)

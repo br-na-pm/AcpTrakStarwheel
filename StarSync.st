@@ -86,7 +86,7 @@ FUNCTION_BLOCK slStarSync
                     
                 ELSE
                 
-                    Internal.PocketWidth        := 2 * slPI * Parameters.SyncPar.StarCalcTarget.StarwheelRadius / Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount;
+                    Internal.PocketWidth        := 2 * slPI * Parameters.SyncPar.StarCalcTarget.StarwheelRadius / USINT_TO_REAL(Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount);
                     Internal.MeshZoneStartPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos - Internal.PocketWidth*0.75;
                     Internal.MeshZoneEndPos     := Parameters.SyncPar.StarCalcTarget.SectorTangentPos + Internal.PocketWidth;
                     
@@ -260,7 +260,7 @@ FUNCTION_BLOCK slStarSync
                     Internal.BarrierCommand.Execute := 1;
 					Internal.State := slSTAR_STATE_ADD_TICKET;
 				ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets >= 1 AND Internal.NewDisabledOvertake THEN
-					Internal.BarrierCommand.AdvancedParameters.TicketCount := -1 * Internal.BarrierReadInfo.BarrierInfo.RemainingTickets;
+					Internal.BarrierCommand.AdvancedParameters.TicketCount := -1 * UDINT_TO_DINT(Internal.BarrierReadInfo.BarrierInfo.RemainingTickets);
 					Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
 					Internal.BarrierCommand.Execute := 1;
 					Internal.State := slSTAR_STATE_REMOVE_TICKETS;
