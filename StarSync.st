@@ -7,8 +7,6 @@ FUNCTION_BLOCK slStarSync
     Internal.PocketSyncError := 0;
     Internal.PocketSyncErrorID := ERR_OK;
     FOR Internal.i := 0 TO slMAX_TARGET_IDX DO
-        Internal.PocketSync[Internal.i].StarwheelPosition := StarwheelPosition;
-        Internal.PocketSync[Internal.i].StarwheelVelocity := StarwheelVelocity;
         IF Internal.PocketSync[Internal.i].Error THEN
             Internal.PocketSyncError := 1;
             Internal.PocketSyncErrorID := Internal.PocketSync[Internal.i].ErrorID;
@@ -89,7 +87,7 @@ FUNCTION_BLOCK slStarSync
                     
                 ELSE
                 
-                    Internal.PocketWidth        := 2 * slPI * Parameters.SyncPar.StarCalcTarget.StarwheelRadius / USINT_TO_REAL(Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount);
+                    Internal.PocketWidth        := brmTWOPI * Parameters.SyncPar.StarCalcTarget.StarwheelRadius / USINT_TO_REAL(Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount);
                     Internal.MeshZoneStartPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos - Internal.PocketWidth*0.75;
                     Internal.MeshZoneEndPos     := Parameters.SyncPar.StarCalcTarget.SectorTangentPos + Internal.PocketWidth;
                     

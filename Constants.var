@@ -15,7 +15,6 @@ VAR CONSTANT
 END_VAR
 (*Values*)
 VAR CONSTANT
-	slPI : LREAL := 3.14159; (*Constant PI*)
 	slNO_POCKET_DETECTED : UINT := 65535;
 	slNO_CLOSEST_POCKET_FOUND : UINT := 65535; (*No closest pocket was found (sync further in functionality)*)
 	slMAX_TARGET_IDX : UINT := 64; (*Maximum target index*)

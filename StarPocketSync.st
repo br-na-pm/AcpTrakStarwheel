@@ -1,8 +1,6 @@
 
 FUNCTION_BLOCK slStarPocketSync
     
-    Internal.StarCalcTarget.StarwheelPosition := StarwheelPosition;
-    Internal.StarCalcTarget.StarwheelVelocity := StarwheelVelocity;
     Internal.StarCalcTarget();
     
     TargetPosition := Internal.StarCalcTarget.TrakPos;

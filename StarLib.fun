@@ -50,8 +50,6 @@ FUNCTION_BLOCK slStarCalcTarget (*Synchronous function block that calculates the
 		TargetIndex : USINT; (*Index to generate a position for*)
 		PeriodCount : USINT; (*Number of periods to monitor*)
 		Enable : BOOL; (*Calculate when true*)
-		StarwheelPosition : {REDUND_UNREPLICABLE} REAL; (*Position of the starwheel in degrees*)
-		StarwheelVelocity : {REDUND_UNREPLICABLE} REAL; (*Velocity of the starwheel in degrees per second*)
 		CalcData : REFERENCE TO slStarSyncCalcDataType;
 		Parameters : REFERENCE TO slStarCalcTargetParType; (*Calculation parameters*)
 	END_VAR
@@ -75,8 +73,6 @@ FUNCTION_BLOCK slStarPocketSync (*Synchronize a shuttle with a pocket*)
 		Sync : BOOL; (*Synchronize on rising edge*)
 		CalcData : REFERENCE TO slStarSyncCalcDataType;
 		Parameters : REFERENCE TO slStarPocketSyncParType; (*Pocket Sync Parameters*)
-		StarwheelPosition : REAL; (*Position of the starwheel in degrees*)
-		StarwheelVelocity : REAL; (*Velocity of the starwheel in degrees per second*)
 	END_VAR
 	VAR_OUTPUT
 		Busy : BOOL; (*Function Block is busy and must continue to be called*)
