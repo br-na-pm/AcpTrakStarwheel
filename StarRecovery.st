@@ -657,7 +657,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Internal.BarrierCmd.Done THEN
                 Internal.BarrierCmd.Execute := FALSE;
                 Internal.ElasticMoveAbs.Axis    := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);
-                Internal.ElasticMoveAbs.Position    := Parameters.ProcessPointStartPosition;
+                Internal.ElasticMoveAbs.Position    := Parameters.ProcessPointStartPosition + 0.001;    //Move 1 mm past the PP to account for floating point error in ProcessPointStartPosition
                 Internal.ElasticMoveAbs.Velocity    := Parameters.Backup.MoveToBarVelocity;
                 Internal.ElasticMoveAbs.Acceleration    := Parameters.Backup.MoveToBarAcceleration;
                 Internal.ElasticMoveAbs.Deceleration    := Parameters.Backup.MoveToBarDeceleration;
