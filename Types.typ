@@ -269,7 +269,7 @@ END_TYPE
 
 TYPE
 	slStarSyncParType : 	STRUCT  (*Pocket Queue Parameters*)
-		ProcessPointStartPosition : LREAL; (*Position on the sector of the process point that starts the synchronization*)
+		Buffer : slStarBufferParType; (*Shuttle buffer parameters*)
 		StartOffset : LREAL; (*Offset from the process point before synchronizing*)
 		SyncPar : slStarPocketSyncParType; (*Synchronization parameters*)
 		Recovery : slStarSyncRecoveryParType; (*Star parameters for recovery*)
@@ -305,13 +305,11 @@ TYPE
 	slStarSyncInternalType : 	STRUCT  (*Internal Data*)
 		TypeID : UDINT; (*Internal data type ID*)
 		ErrorID : DINT; (*Last recorded error ID*)
-		TrgPointEnable : MC_BR_TrgPointEnable_AcpTrak; (*Enable process point*)
-		TrgPointGetInfo : MC_BR_TrgPointGetInfo_AcpTrak; (*Get process point info*)
-		BarrierCommand : MC_BR_BarrierCommand_AcpTrak; (*Command barrier to open or close*)
-		BarrierReadInfo : MC_BR_BarrierReadInfo_AcpTrak; (*Read barrier info*)
 		Recovery : slStarRecovery; (*Recovery process*)
 		RecoveryPar : slStarRecoveryParType; (*Recovery parameters*)
 		MaxTargetIndex : USINT; (*Highest pocket sync target index used*)
+		Buffer : slStarShuttleAsyncBufferType; (*Buffer of shuttles*)
+		StarBuffer : slStarBuffer; (*Shuttle buffer manager*)
 		PocketSync : ARRAY[0..slMAX_TARGET_IDX]OF slStarPocketSync; (*Pocket Sync Targets*)
 		LastPocketActiveState : ARRAY[0..slMAX_TARGET_IDX]OF BOOL; (*Capture the last pocket sync active state*)
 		LastTargetPosition : ARRAY[0..slMAX_TARGET_IDX]OF REAL; (*Last observed target position for each target*)
@@ -340,19 +338,11 @@ TYPE
 		( (*State of execution*)
 		slSTAR_STATE_INIT, (*Initialize handle and data*)
 		slSTAR_STATE_IDLE, (*Idle state*)
-		slSTAR_STATE_CLOSE_BARRIER, (*Close the barrier*)
 		slSTAR_STATE_RECOVER, (*Recover shuttles*)
 		slSTAR_STATE_WAIT_TARGET, (*Wait for the next target to arrive*)
-		slSTAR_STATE_TICKET_COUNT, (*Read ticket count*)
-		slSTAR_STATE_ADD_TICKET, (*Add a ticket to the barrier*)
-		slSTAR_STATE_REMOVE_TICKETS,
 		slSTAR_STATE_WAIT_SHUTTLE, (*Wait for the next shuttle to arrive*)
-		slSTAR_STATE_EVENT_INFO, (*Get event info*)
+		slSTAR_STATE_SYNC, (*Sync shuttle to pocket*)
 		slSTAR_STATE_RESET_FB, (*Reset function blocks*)
-		slSTAR_STATE_SYNCFI_TICKET_COUNT,
-		slSTAR_STATE_SYNCFI_ADD_TICKET,
-		slSTAR_STATE_SYNCFI_WAIT_SHUTTLE,
-		slSTAR_STATE_OPEN_BARRIER, (*Open the barrier*)
 		slSTAR_STATE_WAIT_NOT_BUSY, (*Wait for function blocks to report not busy*)
 		slSTAR_STATE_ERROR (*An error occurred*)
 		);
@@ -452,4 +442,38 @@ TYPE
 		i : UINT; (*Index*)
 		State : slStarDiagStateEnum; (*State of execution*)
 	END_STRUCT;
+END_TYPE
+
+(*Star Buffer*)
+
+TYPE
+	slStarShuttleAsyncBufferType : 	STRUCT  (*Asynchronous Buffer data*)
+		ReadIdx : USINT; (*Starting index of the ring buffer*)
+		WriteIdx : USINT; (*Ending index of the ring buffer*)
+		Shuttles : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Shuttles in the ring buffer*)
+	END_STRUCT;
+	slStarBufferParType : 	STRUCT  (*Staging move information*)
+		StagingPosition : LREAL; (*Staging position*)
+		StagingVelocity : REAL; (*Staging velocity*)
+		StagingAcceleration : REAL; (*Staging acceleration*)
+		StagingDeceleration : REAL; (*Staging deceleration*)
+	END_STRUCT;
+	slStarBufferInternalType : 	STRUCT  (*Internal Data*)
+		State : slStarBufferStateEnum; (*State of execution*)
+		TrgPointEnable : MC_BR_TrgPointEnable_AcpTrak; (*Enable process point*)
+		TrgPointGetInfo : MC_BR_TrgPointGetInfo_AcpTrak; (*Get process point information*)
+		ElasticMoveAbs : MC_BR_ElasticMoveAbs_AcpTrak; (*Move shuttle to staging area*)
+		i : USINT; (*Index*)
+		ShInBuffer : BOOL; (*The evaluated shuttle is already in the buffer*)
+	END_STRUCT;
+	slStarBufferStateEnum : 
+		( (*State of execution*)
+		slSTAR_BUF_STATE_IDLE, (*Idle state*)
+		slSTAR_BUF_STATE_ENABLE_TRIG, (*Enable the process point*)
+		slSTAR_BUF_STATE_GET_INFO, (*Get information from the start process point*)
+		slSTAR_BUF_STATE_MOVE_STAGING, (*Move shuttle to the staging location*)
+		slSTAR_BUF_STATE_RESET_FB, (*Reset function blocks*)
+		slSTAR_BUF_STATE_WAIT_NOT_BUSY, (*Wait for function blocks to report not busy*)
+		slSTAR_BUF_STATE_ERROR (*An error occurred*)
+		);
 END_TYPE

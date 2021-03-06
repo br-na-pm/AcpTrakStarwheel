@@ -18,8 +18,8 @@ FUNCTION_BLOCK slStarSync
         // Continuously watch for calculated Track Sync Positions to overtake the Sync Threshold, and update the NextSyncTarget selector
         // Also monitor for completion
         FOR Internal.i := 0 TO Internal.MaxTargetIndex DO
-            IF Internal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset AND
-                Internal.LastTargetPosition[Internal.i] < Parameters.ProcessPointStartPosition + Parameters.StartOffset AND
+            IF Internal.PocketSync[Internal.i].TargetPosition >= Parameters.Buffer.StagingPosition + Parameters.StartOffset AND
+                Internal.LastTargetPosition[Internal.i] < Parameters.Buffer.StagingPosition + Parameters.StartOffset AND
                 Internal.PocketSync[Internal.i].TargetPosition < Parameters.SyncPar.StarCalcTarget.SectorTangentPos AND 
                 Internal.PocketSync[Internal.i].Active AND
                 NOT Internal.PocketSync[Internal.i].Sync 
@@ -91,42 +91,23 @@ FUNCTION_BLOCK slStarSync
                     Internal.MeshZoneStartPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos - Internal.PocketWidth*0.75;
                     Internal.MeshZoneEndPos     := Parameters.SyncPar.StarCalcTarget.SectorTangentPos + Internal.PocketWidth;
                     
-                    Internal.TrgPointEnable.ProcessPoint := ADR(ProcessPointStart);
-                    
-                    Internal.TrgPointGetInfo.ProcessPoint := ADR(ProcessPointStart);
-                    
-                    Internal.BarrierCommand.ProcessPoint := ADR(ProcessPointStart);
-                    Internal.BarrierCommand.AdvancedParameters.TicketCount := 0;
-                    Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_CLOSE;
-                    Internal.BarrierCommand.Execute := 1;
-                    
-					Internal.BarrierReadInfo.ProcessPoint := ADR(ProcessPointStart);
+                    brsmemset(ADR(Internal.Buffer), 0, SIZEOF(Internal.Buffer));
+                    Internal.StarBuffer.Buffer := ADR(Internal.Buffer);
+                    Internal.StarBuffer.ProcessPoint := ADR(ProcessPointStart);
+                    Internal.StarBuffer.Parameters := ADR(Parameters.Buffer);
 					                    
                     FOR Internal.i := 0 TO slMAX_TARGET_IDX  DO
                         Internal.PocketSync[Internal.i].TargetIndex := UINT_TO_USINT(Internal.i);
                         Internal.PocketSync[Internal.i].PeriodCount := Internal.PeriodCount;
-						Internal.PocketSync[Internal.i].Parameters := ADR(Parameters.SyncPar);
-						Internal.PocketSync[Internal.i].CalcData := ADR(Internal.StarCalcData);
+                        Internal.PocketSync[Internal.i].Parameters := ADR(Parameters.SyncPar);
+                        Internal.PocketSync[Internal.i].CalcData := ADR(Internal.StarCalcData);
                         Internal.PocketSync[Internal.i].Enable := (Internal.i <= Internal.MaxTargetIndex);
                     END_FOR
                 
-                    Internal.State := slSTAR_STATE_CLOSE_BARRIER;
+                    Internal.State := slSTAR_STATE_RECOVER;
                     
                 END_IF
                 
-            END_IF
-            
-        slSTAR_STATE_CLOSE_BARRIER:
-            
-            IF NOT Enable THEN
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierCommand.Error THEN
-                Error := 1;
-                ErrorID := Internal.BarrierCommand.ErrorID;
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierCommand.Done THEN
-                Internal.BarrierCommand.Execute := 0;
-                Internal.State := slSTAR_STATE_RECOVER;
             END_IF
             
         slSTAR_STATE_RECOVER:
@@ -136,7 +117,7 @@ FUNCTION_BLOCK slStarSync
             Internal.RecoveryPar.MeshZoneEndPos     := Internal.MeshZoneEndPos;
             Internal.RecoveryPar.SectorTangentPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
             Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
-            Internal.RecoveryPar.ProcessPointStartPosition := Parameters.ProcessPointStartPosition;
+            Internal.RecoveryPar.ProcessPointStartPosition := Parameters.Buffer.StagingPosition;
             Internal.RecoveryPar.StartOffset := Parameters.StartOffset;
             Internal.RecoveryPar.ResizeStart := Parameters.SyncPar.ResizeStart;
             Internal.RecoveryPar.ResizeEnd := Parameters.SyncPar.ResizeEnd;
@@ -173,53 +154,19 @@ FUNCTION_BLOCK slStarSync
                 ReadyForStart := 1;
                 Internal.RecoveryDone   := TRUE;
                 Internal.Recovery.Enable := 0;
-                Internal.TrgPointEnable.Enable := 1;
+                Internal.StarBuffer.Enable := 1;
                 Active := 1;
-                
-                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
-                IF Parameters.Recovery.SyncFurtherInEnabled AND Internal.NextSyncFITarget <> slNO_CLOSEST_POCKET_FOUND THEN
-                    Internal.BarrierReadInfo.Enable := 1;
-                    Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
-                ELSE
-                    Internal.SyncFurtherInDone  := TRUE;
-                    Internal.State := slSTAR_STATE_WAIT_TARGET;
-                END_IF;
-            END_IF
-        
-        slSTAR_STATE_SYNCFI_TICKET_COUNT:
-     
-            IF NOT Enable THEN
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 THEN
-            
-                Internal.BarrierCommand.AdvancedParameters.TicketCount := 1;
-                Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
-                Internal.BarrierCommand.Execute := 1;
-                Internal.State := slSTAR_STATE_ADD_TICKET;
-            ELSE
-                Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
-            END_IF;
-            
-        slSTAR_STATE_SYNCFI_ADD_TICKET:
-                    
-            IF NOT Enable THEN
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierCommand.Error THEN
-                Error := 1;
-                ErrorID := Internal.BarrierCommand.ErrorID;
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierCommand.Done THEN
-                Internal.BarrierCommand.Execute := 0;
-                Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
+                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Buffer.StagingPosition + Parameters.StartOffset, Handle);
+                Internal.State := slSTAR_STATE_WAIT_TARGET;
             END_IF
             
         slSTAR_STATE_WAIT_TARGET:
             
             IF NOT Enable THEN
                 Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.TrgPointEnable.Error THEN
+            ELSIF Internal.StarBuffer.Error THEN
                 Error := 1;
-                ErrorID := Internal.TrgPointEnable.ErrorID;
+                ErrorID := Internal.StarBuffer.ErrorID;
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF Internal.PocketSyncError THEN
                 Error := 1;
@@ -232,119 +179,44 @@ FUNCTION_BLOCK slStarSync
                         Internal.NewOvertakeDetected := 0;
                         Internal.SkipCount := Internal.SkipCount + 1;
                     ELSE
-                        Internal.BarrierReadInfo.Enable := 1;
-                        Internal.State := slSTAR_STATE_TICKET_COUNT;
+                        Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
                         Internal.SkipCount := 0;
                     END_IF
                 ELSE
-                    Internal.BarrierReadInfo.Enable := 1;
-                    Internal.State := slSTAR_STATE_TICKET_COUNT;
-				END_IF
-			ELSIF Internal.NewDisabledOvertake THEN
-				Internal.BarrierReadInfo.Enable := 1;
-				Internal.State := slSTAR_STATE_TICKET_COUNT;
-            END_IF
-        
-        slSTAR_STATE_TICKET_COUNT:
-            
-            IF NOT Enable THEN
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierReadInfo.Error THEN
-                Error := 1;
-                ErrorID := Internal.BarrierReadInfo.ErrorID;
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierReadInfo.Valid THEN
-                Internal.BarrierReadInfo.Enable := 0;
-                IF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 AND Internal.NewOvertakeDetected THEN
-                    Internal.BarrierCommand.AdvancedParameters.TicketCount := 1;
-                    Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
-                    Internal.BarrierCommand.Execute := 1;
-					Internal.State := slSTAR_STATE_ADD_TICKET;
-				ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets >= 1 AND Internal.NewDisabledOvertake THEN
-					Internal.BarrierCommand.AdvancedParameters.TicketCount := -1 * UDINT_TO_DINT(Internal.BarrierReadInfo.BarrierInfo.RemainingTickets);
-					Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_ADD_TICKETS;
-					Internal.BarrierCommand.Execute := 1;
-					Internal.State := slSTAR_STATE_REMOVE_TICKETS;
-				ELSIF Internal.BarrierReadInfo.BarrierInfo.RemainingTickets = 0 AND Internal.NewDisabledOvertake THEN
-					Internal.NewDisabledOvertake := 0;
-					Internal.State := slSTAR_STATE_WAIT_TARGET;
-				ELSE
                     Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
-                END_IF
+				END_IF
             END_IF
-            
-        slSTAR_STATE_ADD_TICKET:
-            
-            IF NOT Enable THEN
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierCommand.Error THEN
-                Error := 1;
-                ErrorID := Internal.BarrierCommand.ErrorID;
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.BarrierCommand.Done THEN
-                Internal.BarrierCommand.Execute := 0;
-                Internal.State := slSTAR_STATE_WAIT_SHUTTLE;
-			END_IF
-			
-		slSTAR_STATE_REMOVE_TICKETS:
-			
-			IF NOT Enable THEN
-				Internal.State := slSTAR_STATE_RESET_FB;
-			ELSIF Internal.BarrierCommand.Error THEN
-				Error := 1;
-				ErrorID := Internal.BarrierCommand.ErrorID;
-				Internal.State := slSTAR_STATE_RESET_FB;
-			ELSIF Internal.BarrierCommand.Done THEN
-				Internal.BarrierCommand.Execute := 0;
-				Internal.NewDisabledOvertake := 0;
-				Internal.State := slSTAR_STATE_WAIT_TARGET;
-			END_IF;			
             
         slSTAR_STATE_WAIT_SHUTTLE:
             
             IF NOT Enable THEN
                 Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.TrgPointEnable.Error THEN
+            ELSIF Internal.StarBuffer.Error THEN
                 Error := 1;
-                ErrorID := Internal.TrgPointEnable.ErrorID;
+                ErrorID := Internal.StarBuffer.ErrorID;
                 Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.TrgPointEnable.Valid AND Internal.TrgPointEnable.EventCount > 0 THEN
-                Internal.TrgPointGetInfo.Execute := 1;
-                Internal.State := slSTAR_STATE_EVENT_INFO;
+            ELSIF Internal.Buffer.ReadIdx <> Internal.Buffer.WriteIdx THEN
+                Internal.State := slSTAR_STATE_SYNC;
             END_IF
         
-        slSTAR_STATE_EVENT_INFO:
+        slSTAR_STATE_SYNC:
             
-            IF NOT Enable THEN
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.TrgPointGetInfo.Error THEN
-                Error := 1;
-                ErrorID := Internal.TrgPointGetInfo.ErrorID;
-                Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.TrgPointGetInfo.Done THEN
-                Internal.TrgPointGetInfo.Execute := 0;
-                IF Parameters.Recovery.SyncFurtherInEnabled AND NOT Internal.SyncFurtherInDone THEN
-                    IF Internal.TrgPointGetInfo.TrgPointInfo.Event = mcACPTRAK_TP_PASSED_POSITIVE THEN
-                        Internal.PocketSync[Internal.NextSyncFITarget].Axis := Internal.TrgPointGetInfo.TrgPointInfo.Axis;
-                        Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
-                    END_IF
-                    Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Handle);
-                    IF Internal.NextSyncFITarget <> slNO_CLOSEST_POCKET_FOUND THEN
-                        Internal.State := slSTAR_STATE_SYNCFI_TICKET_COUNT;
-                    ELSE
-                        Internal.SyncFurtherInDone  := TRUE;
-                        Internal.NewOvertakeDetected := 0;
-                        Internal.State := slSTAR_STATE_WAIT_TARGET;
-                    END_IF;
-                ELSE
-                    IF Internal.TrgPointGetInfo.TrgPointInfo.Event = mcACPTRAK_TP_PASSED_POSITIVE THEN
-                        Internal.PocketSync[Internal.NextSyncTarget].Axis := Internal.TrgPointGetInfo.TrgPointInfo.Axis;
-                        Internal.PocketSync[Internal.NextSyncTarget].Sync := 1;
-                    END_IF
+            IF Parameters.Recovery.SyncFurtherInEnabled AND NOT Internal.SyncFurtherInDone THEN
+                Internal.PocketSync[Internal.NextSyncFITarget].Axis := Internal.Buffer.Shuttles[Internal.Buffer.ReadIdx];
+                Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
+                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Buffer.StagingPosition + Parameters.StartOffset, Handle);
+                IF Internal.NextSyncFITarget = slNO_CLOSEST_POCKET_FOUND THEN
+                    Internal.SyncFurtherInDone  := TRUE;
                     Internal.NewOvertakeDetected := 0;
-                    Internal.State := slSTAR_STATE_WAIT_TARGET;
-                END_IF;
+                END_IF
+            ELSE
+                Internal.PocketSync[Internal.NextSyncTarget].Axis := Internal.Buffer.Shuttles[Internal.Buffer.ReadIdx];
+                Internal.PocketSync[Internal.NextSyncTarget].Sync := 1;
+                Internal.NewOvertakeDetected := 0;
+                Internal.State := slSTAR_STATE_WAIT_TARGET;
             END_IF
+            Internal.Buffer.ReadIdx := (Internal.Buffer.ReadIdx + 1) MOD (slMAX_SH_IDX_IN_SEC + 1);
+            Internal.State := slSTAR_STATE_WAIT_TARGET;
             
         slSTAR_STATE_RESET_FB:
             
@@ -352,10 +224,7 @@ FUNCTION_BLOCK slStarSync
             ReadyForStart := 0;
             Internal.NextSyncTarget := 0;
             Internal.NewOvertakeDetected := 0;
-            Internal.TrgPointEnable.Enable := 0;
-            Internal.TrgPointGetInfo.Execute := 0;
-            Internal.BarrierCommand.Execute := 0;
-            Internal.BarrierReadInfo.Enable := 0;
+            Internal.StarBuffer.Enable := 0;
             Internal.Recovery.Enable := 0;
             Internal.SyncFurtherInDone  := FALSE;
             Internal.RecoveryDone   := FALSE;
@@ -368,21 +237,6 @@ FUNCTION_BLOCK slStarSync
                 Internal.State := slSTAR_STATE_ERROR;
             ELSE
                 //We only get here if the enable has been dropped
-                Internal.State := slSTAR_STATE_OPEN_BARRIER;
-            END_IF
-        
-        slSTAR_STATE_OPEN_BARRIER:
-            
-            //We should only open the barrier if the enable has been dropped
-            Internal.BarrierCommand.Command := mcACPTRAK_BARRIER_OPEN;
-            Internal.BarrierCommand.Execute := 1;
-            IF Internal.BarrierCommand.Error THEN
-                Internal.BarrierCommand.Execute := 0;
-                Error := 1;
-                ErrorID := Internal.BarrierCommand.ErrorID;
-                Internal.State := slSTAR_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.BarrierCommand.Done THEN
-                Internal.BarrierCommand.Execute := 0;
                 Internal.State := slSTAR_STATE_WAIT_NOT_BUSY;
             END_IF
         
@@ -395,14 +249,11 @@ FUNCTION_BLOCK slStarSync
                 END_IF
             END_FOR
             
-            IF NOT (Internal.PocketSyncBusy OR Internal.TrgPointEnable.Busy OR Internal.TrgPointGetInfo.Busy OR
-                    Internal.BarrierCommand.Busy OR Internal.BarrierReadInfo.Busy OR Internal.Recovery.Busy) THEN
-                
+            IF NOT (Internal.PocketSyncBusy OR Internal.StarBuffer.Busy OR Internal.Recovery.Busy) THEN
                 Error := 0;
                 ErrorID := ERR_OK;
                 Busy := 0;
                 Internal.State := slSTAR_STATE_IDLE;
-                
             END_IF
         
         slSTAR_STATE_ERROR:
@@ -410,7 +261,7 @@ FUNCTION_BLOCK slStarSync
             IF NOT Enable THEN
                 Error := 0;
                 ErrorID := ERR_OK;
-                Internal.State := slSTAR_STATE_OPEN_BARRIER;
+                Internal.State := slSTAR_STATE_WAIT_NOT_BUSY;
             END_IF
         
 	END_CASE
@@ -438,10 +289,7 @@ FUNCTION_BLOCK slStarSync
 	//Capture old starwheel predict position
 	Internal.OldStarPosPredict := Internal.StarCalcData.StarPosPredict;
     
-    Internal.TrgPointEnable();
-    Internal.TrgPointGetInfo();
-    Internal.BarrierCommand();
-    Internal.BarrierReadInfo();
+    Internal.StarBuffer();
     Internal.Recovery();
     FOR Internal.i := 0 TO slMAX_TARGET_IDX DO
         Internal.LastTargetPosition[Internal.i] := Internal.PocketSync[Internal.i].TargetPosition;

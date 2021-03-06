@@ -10,6 +10,7 @@
     <File Description="StarPocketSync Implementation">StarPocketSync.st</File>
     <File Description="StarRecovery Implementation">StarRecovery.st</File>
     <File Description="StarSync Implementation">StarSync.st</File>
+    <File Description="Star Shuttle Buffer">StarBuffer.st</File>
     <File Description="StarGetShuttle Implementation">StarGetShuttle.st</File>
     <File Description="StarDiag Implementation">StarDiag.st</File>
     <File Description="StarDiagLastStateError Implementation">StarDiagLastStateError.st</File>

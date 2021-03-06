@@ -88,6 +88,24 @@ FUNCTION_BLOCK slStarPocketSync (*Synchronize a shuttle with a pocket*)
 	END_VAR
 END_FUNCTION_BLOCK
 
+FUNCTION_BLOCK slStarBuffer (*Ring buffer of shuttles*)
+	VAR_INPUT
+		ProcessPoint : REFERENCE TO McProcessPointType; (*Process point to add shuttles to the buffer*)
+		Buffer : REFERENCE TO slStarShuttleAsyncBufferType; (*Buffer*)
+		Parameters : REFERENCE TO slStarBufferParType; (*Buffer parameters*)
+		Enable : BOOL; (*Enable shuttle buffer*)
+	END_VAR
+	VAR_OUTPUT
+		Busy : BOOL; (*The function block is busy and must continue to be called*)
+		Active : BOOL; (*The buffer is active*)
+		Error : BOOL; (*An error occurred*)
+		ErrorID : DINT; (*ID of the error that occurred*)
+	END_VAR
+	VAR
+		Internal : slStarBufferInternalType; (*Internal Data*)
+	END_VAR
+END_FUNCTION_BLOCK
+
 FUNCTION_BLOCK slStarSync (*Star synchronization*)
 	VAR_INPUT
 		Sector : REFERENCE TO McSectorType; (*Sector for starwheel*)
