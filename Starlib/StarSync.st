@@ -18,8 +18,8 @@ FUNCTION_BLOCK slStarSync
         // Continuously watch for calculated Track Sync Positions to overtake the Sync Threshold, and update the NextSyncTarget selector
         // Also monitor for completion
         FOR Internal.i := 0 TO Internal.MaxTargetIndex DO
-            IF Internal.PocketSync[Internal.i].TargetPosition >= Parameters.Buffer.StagingPosition + Parameters.StartOffset AND
-                Internal.LastTargetPosition[Internal.i] < Parameters.Buffer.StagingPosition + Parameters.StartOffset AND
+            IF Internal.PocketSync[Internal.i].TargetPosition >= Parameters.Staging.Position + Parameters.StartOffset AND
+                Internal.LastTargetPosition[Internal.i] < Parameters.Staging.Position + Parameters.StartOffset AND
                 Internal.PocketSync[Internal.i].TargetPosition < Parameters.SyncPar.StarCalcTarget.SectorTangentPos AND 
                 Internal.PocketSync[Internal.i].Active AND
                 NOT Internal.PocketSync[Internal.i].Sync 
@@ -59,6 +59,11 @@ FUNCTION_BLOCK slStarSync
             
             Handle := ADR(Internal);
             Internal.TypeID := slSTAR_INTERNAL_TYPE_ID;
+            Internal.LandingBufferMan.Buffer := ADR(Internal.LandingBuffer);
+            Internal.LandingBufferMan.Parameters := ADR(Internal.LandingBufferPar);
+            Internal.StagingBufferMan.BufferIn := ADR(Internal.LandingBuffer);
+            Internal.StagingBufferMan.BufferOut := ADR(Internal.StagingBuffer);
+            Internal.StagingBufferMan.Parameters := ADR(Internal.StagingBufferPar);
             Internal.State := slSTAR_STATE_IDLE;
             
         slSTAR_STATE_IDLE:
@@ -66,6 +71,9 @@ FUNCTION_BLOCK slStarSync
             IF Enable THEN
                 
                 Busy := 1;
+                
+                Internal.LandingBufferMan.Sector := ADR(Sector);
+                Internal.LandingBufferMan.ProcessPoint := ADR(ProcessPoint);
                 
                 // Calculate how many periods of starwheel rotation we should calculate track positions for,
                 // in order to cover the area from SyncPP TO ReleasePP
@@ -91,10 +99,8 @@ FUNCTION_BLOCK slStarSync
                     Internal.MeshZoneStartPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos - Internal.PocketWidth*0.75;
                     Internal.MeshZoneEndPos     := Parameters.SyncPar.StarCalcTarget.SectorTangentPos + Internal.PocketWidth;
                     
-                    brsmemset(ADR(Internal.Buffer), 0, SIZEOF(Internal.Buffer));
-                    Internal.StarBuffer.Buffer := ADR(Internal.Buffer);
-                    Internal.StarBuffer.ProcessPoint := ADR(ProcessPointStart);
-                    Internal.StarBuffer.Parameters := ADR(Parameters.Buffer);
+                    brsmemset(ADR(Internal.LandingBuffer), 0, SIZEOF(Internal.LandingBuffer));
+                    brsmemset(ADR(Internal.StagingBuffer), 0, SIZEOF(Internal.StagingBuffer));
 					                    
                     FOR Internal.i := 0 TO slMAX_TARGET_IDX  DO
                         Internal.PocketSync[Internal.i].TargetIndex := UINT_TO_USINT(Internal.i);
@@ -117,7 +123,7 @@ FUNCTION_BLOCK slStarSync
             Internal.RecoveryPar.MeshZoneEndPos     := Internal.MeshZoneEndPos;
             Internal.RecoveryPar.SectorTangentPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
             Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
-            Internal.RecoveryPar.ProcessPointStartPosition := Parameters.Buffer.StagingPosition;
+            Internal.RecoveryPar.ProcessPointStartPosition := Parameters.Staging.Position;
             Internal.RecoveryPar.StartOffset := Parameters.StartOffset;
             Internal.RecoveryPar.ResizeStart := Parameters.SyncPar.ResizeStart;
             Internal.RecoveryPar.ResizeEnd := Parameters.SyncPar.ResizeEnd;
@@ -128,7 +134,7 @@ FUNCTION_BLOCK slStarSync
             Internal.RecoveryPar.Release.Deceleration := Parameters.Recovery.Release.Deceleration;
             Internal.RecoveryPar.UserData := Parameters.Recovery.UserData;
             Internal.RecoveryPar.PocketErrorTolerance := Parameters.Recovery.PocketErrorTolerance;
-            Internal.RecoveryPar.Backup.ProcessPointStart := ProcessPointStart;
+            Internal.RecoveryPar.Backup.ProcessPointStart := ProcessPoint;
             Internal.RecoveryPar.Backup.BackupTolerance := Parameters.Recovery.BackupTolerance;
             Internal.RecoveryPar.Backup.MoveToBarVelocity   := Parameters.Recovery.MoveToBarVelocity;
             Internal.RecoveryPar.Backup.MoveToBarAcceleration   := Parameters.Recovery.MoveToBarAcceleration;
@@ -154,9 +160,10 @@ FUNCTION_BLOCK slStarSync
                 ReadyForStart := 1;
                 Internal.RecoveryDone   := TRUE;
                 Internal.Recovery.Enable := 0;
-                Internal.StarBuffer.Enable := 1;
+                Internal.LandingBufferMan.Enable := 1;
+                Internal.StagingBufferMan.Enable := 1;
                 Active := 1;
-                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Buffer.StagingPosition + Parameters.StartOffset, Handle);
+                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Staging.Position + Parameters.StartOffset, Handle);
                 Internal.State := slSTAR_STATE_WAIT_TARGET;
             END_IF
             
@@ -164,9 +171,13 @@ FUNCTION_BLOCK slStarSync
             
             IF NOT Enable THEN
                 Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.StarBuffer.Error THEN
+            ELSIF Internal.LandingBufferMan.Error THEN
                 Error := 1;
-                ErrorID := Internal.StarBuffer.ErrorID;
+                ErrorID := Internal.LandingBufferMan.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.StagingBufferMan.Error THEN
+                Error := 1;
+                ErrorID := Internal.StagingBufferMan.ErrorID;
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF Internal.PocketSyncError THEN
                 Error := 1;
@@ -191,32 +202,54 @@ FUNCTION_BLOCK slStarSync
             
             IF NOT Enable THEN
                 Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.StarBuffer.Error THEN
+            ELSIF Internal.LandingBufferMan.Error THEN
                 Error := 1;
-                ErrorID := Internal.StarBuffer.ErrorID;
+                ErrorID := Internal.LandingBufferMan.ErrorID;
                 Internal.State := slSTAR_STATE_RESET_FB;
-            ELSIF Internal.Buffer.ReadIdx <> Internal.Buffer.WriteIdx THEN
+            ELSIF Internal.StagingBufferMan.Error THEN
+                Error := 1;
+                ErrorID := Internal.StagingBufferMan.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF tbBufferShAvailable(ADR(Internal.StagingBuffer)) THEN
                 Internal.State := slSTAR_STATE_SYNC;
             END_IF
         
         slSTAR_STATE_SYNC:
             
             IF Parameters.Recovery.SyncFurtherInEnabled AND NOT Internal.SyncFurtherInDone THEN
-                Internal.PocketSync[Internal.NextSyncFITarget].Axis := Internal.Buffer.Shuttles[Internal.Buffer.ReadIdx];
-                Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
-                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Buffer.StagingPosition + Parameters.StartOffset, Handle);
-                IF Internal.NextSyncFITarget = slNO_CLOSEST_POCKET_FOUND THEN
-                    Internal.SyncFurtherInDone  := TRUE;
-                    Internal.NewOvertakeDetected := 0;
+                Internal.Status := tbBufferGetFirst(ADR(Internal.StagingBuffer), ADR(Internal.PocketSync[Internal.NextSyncFITarget].Axis));
+                IF Internal.Status = ERR_OK THEN
+                    Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
+                    Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Staging.Position + Parameters.StartOffset, Handle);
+                    IF Internal.NextSyncFITarget = slNO_CLOSEST_POCKET_FOUND THEN
+                        Internal.SyncFurtherInDone  := TRUE;
+                        Internal.NewOvertakeDetected := 0;
+                    END_IF
+                ELSE
+                    Error := 1;
+                    ErrorID := Internal.Status;
+                    Internal.State := slSTAR_STATE_RESET_FB;
                 END_IF
             ELSE
-                Internal.PocketSync[Internal.NextSyncTarget].Axis := Internal.Buffer.Shuttles[Internal.Buffer.ReadIdx];
-                Internal.PocketSync[Internal.NextSyncTarget].Sync := 1;
-                Internal.NewOvertakeDetected := 0;
-                Internal.State := slSTAR_STATE_WAIT_TARGET;
+                Internal.Status := tbBufferGetFirst(ADR(Internal.StagingBuffer), ADR(Internal.PocketSync[Internal.NextSyncTarget].Axis));
+                IF Internal.Status = ERR_OK THEN
+                    Internal.PocketSync[Internal.NextSyncTarget].Sync := 1;
+                    Internal.NewOvertakeDetected := 0;
+                    Internal.State := slSTAR_STATE_WAIT_TARGET;
+                ELSE
+                    Error := 1;
+                    ErrorID := Internal.Status;
+                    Internal.State := slSTAR_STATE_RESET_FB;
+                END_IF
             END_IF
-            Internal.Buffer.ReadIdx := (Internal.Buffer.ReadIdx + 1) MOD (slMAX_SH_IDX_IN_SEC + 1);
-            Internal.State := slSTAR_STATE_WAIT_TARGET;
+            Internal.Status := tbBufferRemoveFirst(ADR(Internal.StagingBuffer));
+            IF Internal.Status = ERR_OK THEN
+                Internal.State := slSTAR_STATE_WAIT_TARGET;
+            ELSE
+                Error := 1;
+                ErrorID := Internal.Status;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            END_IF
             
         slSTAR_STATE_RESET_FB:
             
@@ -224,7 +257,8 @@ FUNCTION_BLOCK slStarSync
             ReadyForStart := 0;
             Internal.NextSyncTarget := 0;
             Internal.NewOvertakeDetected := 0;
-            Internal.StarBuffer.Enable := 0;
+            Internal.LandingBufferMan.Enable := 0;
+            Internal.StagingBufferMan.Enable := 0;
             Internal.Recovery.Enable := 0;
             Internal.SyncFurtherInDone  := FALSE;
             Internal.RecoveryDone   := FALSE;
@@ -249,7 +283,7 @@ FUNCTION_BLOCK slStarSync
                 END_IF
             END_FOR
             
-            IF NOT (Internal.PocketSyncBusy OR Internal.StarBuffer.Busy OR Internal.Recovery.Busy) THEN
+            IF NOT (Internal.PocketSyncBusy OR Internal.LandingBufferMan.Busy OR Internal.StagingBufferMan.Busy OR Internal.Recovery.Busy) THEN
                 Error := 0;
                 ErrorID := ERR_OK;
                 Busy := 0;
@@ -289,8 +323,24 @@ FUNCTION_BLOCK slStarSync
 	//Capture old starwheel predict position
 	Internal.OldStarPosPredict := Internal.StarCalcData.StarPosPredict;
     
-    Internal.StarBuffer();
+    Internal.LandingBufferPar.Position := Parameters.Landing.Position;
+    Internal.LandingBufferPar.RouteVelocity := Parameters.Landing.Velocity;
+    Internal.LandingBufferPar.Velocity := Parameters.Starting.Velocity;
+    Internal.LandingBufferPar.Acceleration := Parameters.Landing.Acceleration;
+    Internal.LandingBufferPar.Deceleration := Parameters.Landing.Deceleration;
+    Internal.LandingBufferPar.AdvancedParameters := Parameters.Landing.AdvancedParameters;
+    
+    Internal.StagingBufferPar.ArrivalPosition := Parameters.Starting.Position;
+    Internal.StagingBufferPar.DestinationPosition := Parameters.Staging.Position;
+    Internal.StagingBufferPar.DestinationVelocity := Parameters.Staging.Velocity;
+    Internal.StagingBufferPar.DestinationAcceleration := Parameters.Staging.Acceleration;
+    Internal.StagingBufferPar.DestinationDeceleration := Parameters.Staging.Deceleration;
+    
+    Internal.LandingBufferMan();
+    Internal.StagingBufferMan();
+    
     Internal.Recovery();
+    
     FOR Internal.i := 0 TO slMAX_TARGET_IDX DO
         Internal.LastTargetPosition[Internal.i] := Internal.PocketSync[Internal.i].TargetPosition;
         Internal.PocketSync[Internal.i]();

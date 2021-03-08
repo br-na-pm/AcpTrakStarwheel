@@ -1,0 +1,9 @@
+(*Values*)
+VAR CONSTANT
+	tbMAX_BUF_IDX : USINT := 64; (*Maximum shuttle index in the buffer*)
+END_VAR
+(*Errors*)
+VAR CONSTANT
+	tbERR_MAX_BUF_IDX : DINT := -5500; (*Index of shuttle in buffer exceeds limit*)
+	tbERR_NO_SH_IN_BUFFER : DINT := -5501; (*No shuttles are in the buffer*)
+END_VAR

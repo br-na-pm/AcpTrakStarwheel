@@ -12,7 +12,6 @@ VAR CONSTANT
 	slERR_INVALID_USER_DATA : DINT := -5009; (*Invalid user data parameters*)
 	slERR_SYNC_ABORTED : DINT := -5010; (*The synchronization was aborted while a shuttle was in sync*)
 	slERR_RECOV_MOVEMNT_ABORTED : DINT := -5011;
-	slERR_MAX_STAR_SH_IDX : DINT := -5111; (*Index of shuttle on star sector exceeds limit*)
 END_VAR
 (*Values*)
 VAR CONSTANT

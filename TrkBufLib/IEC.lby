@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio Version=4.7.5.60 SP?>
+<Library SubType="IEC" xmlns="http://br-automation.co.at/AS/Library">
+  <Files>
+    <File Description="Exported data types">Types.typ</File>
+    <File Description="Exported constants">Constants.var</File>
+    <File Description="Exported functions and function blocks">TrkBufLib.fun</File>
+    <File Description="Routed Move Velocity from Trigger Shuttle Buffer">RoutedMoveVelTrigBuffer.st</File>
+    <File Description="Elastic Move Absolute from Position Shuttle Buffer">ElasticMoveAbsPosBuffer.st</File>
+    <File Description="Add shuttle to the buffer">BufferAddSh.st</File>
+    <File Description="Get first shuttle entered in the buffer">BufferGetFirst.st</File>
+    <File Description="Remove the first shuttle entered in the buffer">BufferRemoveFirst.st</File>
+    <File Description="Check if shuttle is in buffer">ShInBuffer.st</File>
+    <File Description="Indicate if a shuttle is available in the buffer">BufferShAvailable.st</File>
+  </Files>
+  <Dependencies>
+    <Dependency ObjectName="standard" />
+  </Dependencies>
+</Library>

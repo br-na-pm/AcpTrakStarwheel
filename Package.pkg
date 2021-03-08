@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio Version=4.7.5.60 SP?>
+<Package xmlns="http://br-automation.co.at/AS/Package">
+  <Objects>
+    <Object Type="Library" Language="IEC" Description="Starwheel Control Library">Starlib</Object>
+    <Object Type="Library" Language="IEC" Description="Implement a buffer on a track system">TrkBufLib</Object>
+  </Objects>
+</Package>

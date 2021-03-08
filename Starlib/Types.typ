@@ -269,12 +269,31 @@ END_TYPE
 
 TYPE
 	slStarSyncParType : 	STRUCT  (*Pocket Queue Parameters*)
-		Buffer : slStarBufferParType; (*Shuttle buffer parameters*)
-		StartOffset : LREAL; (*Offset from the process point before synchronizing*)
+		Landing : slStarSyncLandingParType; (*Landing parameters*)
+		Starting : slStarSyncStartingParType; (*Starting parameters*)
+		Staging : slStarSyncStagingParType; (*Staging parameters*)
+		StartOffset : LREAL; (*Offset from the staging position before synchronizing*)
 		SyncPar : slStarPocketSyncParType; (*Synchronization parameters*)
 		Recovery : slStarSyncRecoveryParType; (*Star parameters for recovery*)
 		Skip : slStarSyncSkipParType; (*Skip parameters*)
 		ShExtentToFront : LREAL;
+	END_STRUCT;
+	slStarSyncLandingParType : 	STRUCT  (*Landing parameters*)
+		Position : LREAL; (*Target Position*)
+		Velocity : REAL; (*Target Velocity*)
+		Acceleration : REAL; (*Target Acceleration*)
+		Deceleration : REAL; (*Target Deceleration*)
+		AdvancedParameters : McAcpTrakAdvRouteParType; (*Advanced move parameters*)
+	END_STRUCT;
+	slStarSyncStartingParType : 	STRUCT  (*Starting parameters*)
+		Position : LREAL; (*Target Position*)
+		Velocity : REAL; (*Target Velocity*)
+	END_STRUCT;
+	slStarSyncStagingParType : 	STRUCT  (*Staging parameters*)
+		Position : LREAL; (*Target Position*)
+		Velocity : REAL; (*Target Velocity*)
+		Acceleration : REAL; (*Target Acceleration*)
+		Deceleration : REAL; (*Target Deceleration*)
 	END_STRUCT;
 	slStarSyncRecoveryParType : 	STRUCT  (*Star parameters for recovery*)
 		Release : slStarSyncRecoveryReleaseType; (*Release parameters*)
@@ -308,8 +327,12 @@ TYPE
 		Recovery : slStarRecovery; (*Recovery process*)
 		RecoveryPar : slStarRecoveryParType; (*Recovery parameters*)
 		MaxTargetIndex : USINT; (*Highest pocket sync target index used*)
-		Buffer : slStarShuttleAsyncBufferType; (*Buffer of shuttles*)
-		StarBuffer : slStarBuffer; (*Shuttle buffer manager*)
+		LandingBuffer : tbAsyncShuttleBufferType; (*Buffer of shuttles that are landing on the sector*)
+		StagingBuffer : tbAsyncShuttleBufferType; (*Buffer of shuttles that are being staged*)
+		LandingBufferMan : tbRoutedMoveVelTrgBuffer; (*Landing shuttle buffer manager*)
+		LandingBufferPar : tbRtdMvVelTrgBufferParType; (*Landing buffer parameters*)
+		StagingBufferMan : tbElasticMoveAbsPosBuffer; (*Staging shuttle buffer manager*)
+		StagingBufferPar : tbElaMvAbsPosBufferParType; (*Staging buffer parameters*)
 		PocketSync : ARRAY[0..slMAX_TARGET_IDX]OF slStarPocketSync; (*Pocket Sync Targets*)
 		LastPocketActiveState : ARRAY[0..slMAX_TARGET_IDX]OF BOOL; (*Capture the last pocket sync active state*)
 		LastTargetPosition : ARRAY[0..slMAX_TARGET_IDX]OF REAL; (*Last observed target position for each target*)
@@ -333,6 +356,7 @@ TYPE
 		RecoveryDone : BOOL;
 		StarCalcData : slStarSyncCalcDataType; (*Includes Calc Target information that is Starwheel-specific, rather than Pocket-specific*)
 		OldStarPosPredict : REAL; (*Star Position, including predictive compensation, from last cycle*)
+		Status : DINT; (*Status*)
 	END_STRUCT;
 	slStarSyncStateEnum : 
 		( (*State of execution*)
@@ -442,38 +466,4 @@ TYPE
 		i : UINT; (*Index*)
 		State : slStarDiagStateEnum; (*State of execution*)
 	END_STRUCT;
-END_TYPE
-
-(*Star Buffer*)
-
-TYPE
-	slStarShuttleAsyncBufferType : 	STRUCT  (*Asynchronous Buffer data*)
-		ReadIdx : USINT; (*Starting index of the ring buffer*)
-		WriteIdx : USINT; (*Ending index of the ring buffer*)
-		Shuttles : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Shuttles in the ring buffer*)
-	END_STRUCT;
-	slStarBufferParType : 	STRUCT  (*Staging move information*)
-		StagingPosition : LREAL; (*Staging position*)
-		StagingVelocity : REAL; (*Staging velocity*)
-		StagingAcceleration : REAL; (*Staging acceleration*)
-		StagingDeceleration : REAL; (*Staging deceleration*)
-	END_STRUCT;
-	slStarBufferInternalType : 	STRUCT  (*Internal Data*)
-		State : slStarBufferStateEnum; (*State of execution*)
-		TrgPointEnable : MC_BR_TrgPointEnable_AcpTrak; (*Enable process point*)
-		TrgPointGetInfo : MC_BR_TrgPointGetInfo_AcpTrak; (*Get process point information*)
-		ElasticMoveAbs : MC_BR_ElasticMoveAbs_AcpTrak; (*Move shuttle to staging area*)
-		i : USINT; (*Index*)
-		ShInBuffer : BOOL; (*The evaluated shuttle is already in the buffer*)
-	END_STRUCT;
-	slStarBufferStateEnum : 
-		( (*State of execution*)
-		slSTAR_BUF_STATE_IDLE, (*Idle state*)
-		slSTAR_BUF_STATE_ENABLE_TRIG, (*Enable the process point*)
-		slSTAR_BUF_STATE_GET_INFO, (*Get information from the start process point*)
-		slSTAR_BUF_STATE_MOVE_STAGING, (*Move shuttle to the staging location*)
-		slSTAR_BUF_STATE_RESET_FB, (*Reset function blocks*)
-		slSTAR_BUF_STATE_WAIT_NOT_BUSY, (*Wait for function blocks to report not busy*)
-		slSTAR_BUF_STATE_ERROR (*An error occurred*)
-		);
 END_TYPE
