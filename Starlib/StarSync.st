@@ -1,8 +1,6 @@
 
 FUNCTION_BLOCK slStarSync
 	
-	
-    
     //Check for an error on a pocket
     Internal.PocketSyncError := 0;
     Internal.PocketSyncErrorID := ERR_OK;
@@ -114,11 +112,25 @@ FUNCTION_BLOCK slStarSync
                         Internal.PocketSync[Internal.i].CalcData := ADR(Internal.StarCalcData);
                         Internal.PocketSync[Internal.i].Enable := (Internal.i <= Internal.MaxTargetIndex);
                     END_FOR
-                
-                    Internal.State := slSTAR_STATE_RECOVER;
+                    
+                    Internal.BarrierCmd.ProcessPoint := ADR(ProcessPoint);
+                    Internal.BarrierCmd.Command := mcACPTRAK_BARRIER_CLOSE;
+                    Internal.BarrierCmd.Execute := 1;
+                    Internal.State := slSTAR_STATE_CLOSE_BARRIER;
                     
                 END_IF
                 
+            END_IF
+            
+        slSTAR_STATE_CLOSE_BARRIER:
+            
+            IF Internal.BarrierCmd.Error THEN
+                Error := 1;
+                ErrorID := Internal.BarrierCmd.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.BarrierCmd.Done THEN
+                Internal.BarrierCmd.Execute := 0;
+                Internal.State := slSTAR_STATE_RECOVER;
             END_IF
             
         slSTAR_STATE_RECOVER:
@@ -167,10 +179,37 @@ FUNCTION_BLOCK slStarSync
                 Internal.Recovery.Enable := 0;
                 Internal.LandingBufferMan.Enable := 1;
                 Internal.StagingBufferMan.Enable := 1;
-                Active := 1;
                 Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Staging.Position + Parameters.StartOffset, Handle);
-                Internal.State := slSTAR_STATE_WAIT_TARGET;
+                Internal.State := slSTAR_STATE_WAIT_BUFFER_START;
             END_IF
+            
+        slSTAR_STATE_WAIT_BUFFER_START:
+            
+            IF Internal.LandingBufferMan.Error THEN
+                Error := 1;
+                ErrorID := Internal.LandingBufferMan.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.StagingBufferMan.Error THEN
+                Error := 1;
+                ErrorID := Internal.StagingBufferMan.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.LandingBufferMan.Active AND Internal.StagingBufferMan.Active THEN
+                Internal.BarrierCmd.Command := mcACPTRAK_BARRIER_OPEN;
+                Internal.BarrierCmd.Execute := 1;
+                Internal.State := slSTAR_STATE_OPEN_BARRIER;
+            END_IF
+            
+        slSTAR_STATE_OPEN_BARRIER:
+            
+            IF Internal.BarrierCmd.Error THEN
+                Error := 1;
+                ErrorID := Internal.BarrierCmd.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.BarrierCmd.Done THEN
+                Internal.BarrierCmd.Execute := 0;
+                Active := 1;
+                Internal.State := slSTAR_STATE_WAIT_TARGET;
+            END_IF            
             
         slSTAR_STATE_WAIT_TARGET:
             
@@ -264,6 +303,7 @@ FUNCTION_BLOCK slStarSync
             Internal.NewOvertakeDetected := 0;
             Internal.LandingBufferMan.Enable := 0;
             Internal.StagingBufferMan.Enable := 0;
+            Internal.BarrierCmd.Execute := 0;
             Internal.Recovery.Enable := 0;
             Internal.SyncFurtherInDone  := FALSE;
             Internal.RecoveryDone   := FALSE;
@@ -272,12 +312,23 @@ FUNCTION_BLOCK slStarSync
                 Internal.PocketSync[Internal.i].Sync := 0;
                 Internal.PocketSync[Internal.i].Enable := 0;
             END_FOR
-            IF Error THEN
+            Internal.State := slSTAR_STATE_RESET_BARRIER;
+            
+        slSTAR_STATE_RESET_BARRIER:
+            
+            Internal.BarrierCmd.Command := mcACPTRAK_BARRIER_OPEN;
+            Internal.BarrierCmd.Execute := 1;
+            IF Internal.BarrierCmd.Error THEN
+                Internal.BarrierCmd.Execute := 0;
+                IF NOT Error THEN
+                    Error := 1;
+                    ErrorID := Internal.BarrierCmd.ErrorID;
+                END_IF
                 Internal.State := slSTAR_STATE_ERROR;
-            ELSE
-                //We only get here if the enable has been dropped
+            ELSIF Internal.BarrierCmd.Done THEN
+                Internal.BarrierCmd.Execute := 0;
                 Internal.State := slSTAR_STATE_WAIT_NOT_BUSY;
-            END_IF
+            END_IF            
         
         slSTAR_STATE_WAIT_NOT_BUSY:
             
@@ -288,7 +339,7 @@ FUNCTION_BLOCK slStarSync
                 END_IF
             END_FOR
             
-            IF NOT (Internal.PocketSyncBusy OR Internal.LandingBufferMan.Busy OR Internal.StagingBufferMan.Busy OR Internal.Recovery.Busy) THEN
+            IF NOT (Internal.BarrierCmd.Busy OR Internal.PocketSyncBusy OR Internal.LandingBufferMan.Busy OR Internal.StagingBufferMan.Busy OR Internal.Recovery.Busy) THEN
                 Error := 0;
                 ErrorID := ERR_OK;
                 Busy := 0;
@@ -340,6 +391,8 @@ FUNCTION_BLOCK slStarSync
     Internal.StagingBufferPar.DestinationVelocity := Parameters.Staging.Velocity;
     Internal.StagingBufferPar.DestinationAcceleration := Parameters.Staging.Acceleration;
     Internal.StagingBufferPar.DestinationDeceleration := Parameters.Staging.Deceleration;
+    
+    Internal.BarrierCmd();
     
     Internal.LandingBufferMan();
     Internal.StagingBufferMan();
