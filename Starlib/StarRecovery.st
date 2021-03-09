@@ -22,26 +22,13 @@ FUNCTION_BLOCK slStarRecovery
                         Internal.State := slREC_STATE_ERROR;
                     ELSE
                         brsmemset(ADR(Internal.Data), 0, SIZEOF(Internal.Data));
-                        Internal.AsmGetInfo.Assembly    := ADR(Assembly);
-                        Internal.AsmGetInfo.Execute     := TRUE;
-                        Internal.State := slREC_STATE_CHECK_SECTOR_SIM;    
+                        Internal.SecGetShuttle.Sector := ADR(Sector);
+                        Internal.SecGetShuttle.Mode := mcACPTRAK_SEARCH_BACKWARD;
+                        Internal.SecGetShuttle.Enable := TRUE;
+                        Internal.State := slREC_STATE_GET_SHUTTLES;  
                     END_IF
                 END_IF
             END_IF
-        
-        slREC_STATE_CHECK_SECTOR_SIM:
-            
-            IF Internal.AsmGetInfo.Done THEN
-                Internal.SecGetShuttle.Sector := ADR(Sector);
-                Internal.SecGetShuttle.Mode := mcACPTRAK_SEARCH_BACKWARD;
-                Internal.SecGetShuttle.Enable := TRUE;
-                Internal.State := slREC_STATE_GET_SHUTTLES;
-            ELSIF Internal.AsmGetInfo.Error THEN
-                Internal.AsmGetInfo.Execute := FALSE;
-                Error   := TRUE;
-                ErrorID := Internal.AsmGetInfo.ErrorID;
-                Internal.State := slREC_STATE_ERROR;
-            END_IF;
             
         slREC_STATE_GET_SHUTTLES:
             // ----------------------------------------------------------------------- Get shuttles in sector
@@ -62,22 +49,10 @@ FUNCTION_BLOCK slStarRecovery
                     Internal.Data.Init.ShuttlePos[Internal.Data.Init.NumShuttles] := Internal.SecGetShuttle.AdditionalInfo.Position;
                     Internal.Data.Init.ShuttleAxis[Internal.Data.Init.NumShuttles] := Internal.SecGetShuttle.Axis;
                     Internal.Data.Init.NumShuttles := Internal.Data.Init.NumShuttles + 1;
-                    IF Internal.AsmGetInfo.AssemblyInfo.SimulationOnPlcMode = mcACPTRAK_SIM_STATE_OFF THEN
-                        Internal.State := slREC_STATE_GET_SHUTTLES_NEXT;
-                    ELSIF Internal.AsmGetInfo.AssemblyInfo.SimulationOnPlcMode = mcACPTRAK_SIM_STATE_ON THEN
-                        Internal.RoutedMoveAbs.Sector   := ADR(Sector);
-                        Internal.RoutedMoveAbs.Axis     := ADR(Internal.SecGetShuttle.Axis);
-                        Internal.RoutedMoveAbs.Position := Internal.SecGetShuttle.AdditionalInfo.Position;
-                        Internal.RoutedMoveAbs.Velocity := 1.0;
-                        Internal.RoutedMoveAbs.Acceleration := 20.0;
-                        Internal.RoutedMoveAbs.Deceleration := 20.0;
-                        Internal.RoutedMoveAbs.AdvancedParameters.StartDirection    := mcDIR_UNDEFINED;
-                        Internal.RoutedMoveAbs.AdvancedParameters.EndDirection      := mcDIR_UNDEFINED;
-                        Internal.RoutedMoveAbs.AdvancedParameters.ShuttleOrientation    := mcDIR_UNDEFINED;
-                        Internal.RoutedMoveAbs.Execute  := TRUE;
-                        
-                        Internal.State  := slREC_STATE_ATTACH_TO_SECTOR;
-                    END_IF;
+                    Internal.ShSwitchSector.Sector := ADR(Sector);
+                    Internal.ShSwitchSector.Axis := ADR(Internal.SecGetShuttle.Axis);
+                    Internal.ShSwitchSector.Execute := TRUE;
+                    Internal.State  := slREC_STATE_ATTACH_TO_SECTOR;
                 ELSE //No shuttles on the sector
                     Internal.SecGetShuttle.Enable := FALSE;
                     Internal.State := slREC_STATE_DONE;
@@ -86,13 +61,13 @@ FUNCTION_BLOCK slStarRecovery
           
         slREC_STATE_ATTACH_TO_SECTOR:
             
-            IF Internal.RoutedMoveAbs.Done THEN
-                Internal.RoutedMoveAbs.Execute  := FALSE;
+            IF Internal.ShSwitchSector.Done THEN
+                Internal.ShSwitchSector.Execute  := FALSE;
                 Internal.State  := slREC_STATE_GET_SHUTTLES_NEXT;
-            ELSIF Internal.RoutedMoveAbs.Error THEN
-                Internal.RoutedMoveAbs.Execute  := FALSE;
+            ELSIF Internal.ShSwitchSector.Error THEN
+                Internal.ShSwitchSector.Execute  := FALSE;
                 Error   := TRUE;
-                ErrorID := Internal.RoutedMoveAbs.ErrorID;
+                ErrorID := Internal.ShSwitchSector.ErrorID;
                 Internal.State := slREC_STATE_ERROR;
             END_IF;
             
@@ -159,12 +134,12 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.ShResize.Execute := 0;
                 Internal.RoutedMoveVel.Axis := ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]);
                 Internal.RoutedMoveVel.Sector := ADR(DestinationSector);
-                Internal.RoutedMoveVel.Velocity := Parameters.Release.Velocity;
-                Internal.RoutedMoveVel.Acceleration := Parameters.Release.Acceleration;
-                Internal.RoutedMoveVel.Deceleration := Parameters.Release.Deceleration;
-                Internal.RoutedMoveVel.AdvancedParameters.StartDirection    := mcDIR_POSITIVE;
-                Internal.RoutedMoveVel.AdvancedParameters.EndDirection      := mcDIR_UNDEFINED;
-                Internal.RoutedMoveVel.AdvancedParameters.ShuttleOrientation    := mcDIR_UNDEFINED;
+                Internal.RoutedMoveVel.Position := DestinationParameters.TargetPosition;
+                Internal.RoutedMoveVel.Velocity := DestinationParameters.Velocity;
+                Internal.RoutedMoveVel.RouteVelocity := DestinationParameters.RouteVelocity;
+                Internal.RoutedMoveVel.Acceleration := DestinationParameters.Acceleration;
+                Internal.RoutedMoveVel.Deceleration := DestinationParameters.Deceleration;
+                Internal.RoutedMoveVel.AdvancedParameters := DestinationParameters.AdvancedParameters;
                 
                 Internal.RoutedMoveVel.Execute := TRUE;
                 Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;     
@@ -190,8 +165,6 @@ FUNCTION_BLOCK slStarRecovery
                     Internal.State := slREC_STATE_DONE;
                 END_IF;
             END_IF
-            
-            
             
         slREC_STATE_MESH_ZONE_CHECK:
             // ----------------------------------------------------------------------- Find shuttles in the sync zone
@@ -228,7 +201,7 @@ FUNCTION_BLOCK slStarRecovery
                         Internal.Data.Mesh.NextClosestPocketIndex   := 1;
                     END_IF;
                     //Ignore any pockets that are before the sync zone
-                    IF StarInternal.PocketSync[Internal.i].TargetPosition >= Parameters.ProcessPointStartPosition + Parameters.StartOffset THEN
+                    IF StarInternal.PocketSync[Internal.i].TargetPosition >= StagingParameters.Position + Parameters.StartOffset THEN
                         Internal.Data.Mesh.PocketEvalIndexValid := TRUE;
                         IF ABS(Internal.Data.Mesh.ShuttleErrorNew) < ABS(Internal.Data.Mesh.ShuttleError) THEN
                             Internal.Data.Mesh.NextClosestPocketIndex   := Internal.Data.Mesh.PocketEvalIndex;
@@ -327,11 +300,11 @@ FUNCTION_BLOCK slStarRecovery
             
             IF Enable THEN
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.MeshZoneStartPos AND 
-                    Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (Parameters.ProcessPointStartPosition + Parameters.StartOffset) THEN
+                    Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= (StagingParameters.Position + Parameters.StartOffset) THEN
                     Internal.Data.Sync.ShuttlePos[Internal.Data.Sync.PocketEvalCount]   := Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount];
                     IF NOT Internal.Data.Sync.SyncFurtherIn.ClosestPocketToMeshFound THEN
                         Internal.Data.Sync.SyncFurtherIn.ClosestPocketToMeshFound   := TRUE;
-                        Internal.Data.Sync.PocketEvalIndex    := ClosestSyncPocket(Parameters.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
+                        Internal.Data.Sync.PocketEvalIndex    := ClosestSyncPocket(Parameters.MeshZoneStartPos, StagingParameters.Position + Parameters.StartOffset, Internal.Handle);
                         IF Internal.Data.Sync.PocketEvalIndex = slNO_CLOSEST_POCKET_FOUND THEN
 	                        Internal.Data.Sync.SyncFurtherIn.NoClosestPocketFound   := TRUE;
                         ELSE
@@ -375,7 +348,7 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- Find the closest pocket to it and see if it is in tolerance 
                 
             IF Parameters.SyncFurtherInEnabled THEN
-                IF StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition < (Parameters.ProcessPointStartPosition + Parameters.StartOffset) THEN
+                IF StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition < (StagingParameters.Position + Parameters.StartOffset) THEN
                     Internal.State := slREC_STATE_BACKUP_ZONE_CHECK;
                 ELSE
                     Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.PocketEvalIndex;
@@ -443,7 +416,7 @@ FUNCTION_BLOCK slStarRecovery
             
                 //Check to see if there is another shuttle closer to this pocket, if so- try and sync to the next closest pocket
                 IF NOT Internal.Data.Sync.ClosestPocketTaken THEN
-                    IF StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition < Parameters.ProcessPointStartPosition + Parameters.StartOffset THEN
+                    IF StarInternal.PocketSync[Internal.Data.Sync.PocketEvalIndex].TargetPosition < StagingParameters.Position + Parameters.StartOffset THEN
                         Internal.State := slREC_STATE_BACKUP_ZONE_CHECK;
                     ELSE
                         Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.PocketEvalIndex;
@@ -451,7 +424,7 @@ FUNCTION_BLOCK slStarRecovery
                         Internal.State := slREC_STATE_SYN_ZONE_RESIZE;
                     END_IF;
                 ELSIF Internal.Data.Sync.ClosestPocketTaken AND NOT Internal.Data.Sync.NextClosestPocketTaken THEN
-                    IF StarInternal.PocketSync[Internal.Data.Sync.NextClosestPocketIndex].TargetPosition < Parameters.ProcessPointStartPosition + Parameters.StartOffset THEN
+                    IF StarInternal.PocketSync[Internal.Data.Sync.NextClosestPocketIndex].TargetPosition < StagingParameters.Position + Parameters.StartOffset THEN
                         Internal.State := slREC_STATE_BACKUP_ZONE_CHECK;
                     ELSE
                         Internal.Data.Sync.PocketIndices[Internal.Data.Sync.PocketEvalCount] := Internal.Data.Sync.NextClosestPocketIndex;
@@ -506,16 +479,21 @@ FUNCTION_BLOCK slStarRecovery
             
             IF NOT Enable THEN
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN 
-                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] < Parameters.ProcessPointStartPosition AND Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= Parameters.ProcessPointStartPosition - Parameters.ShExtentToFront THEN
-                    Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.EvalCount]    := TRUE;
-                END_IF;          
+            ELSIF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= StagingParameters.Position THEN    
                 Internal.Data.Backup.Axes[Internal.Data.Backup.EvalCount] := Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount];
                 Internal.Data.Backup.Positions[Internal.Data.Backup.EvalCount] := Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount];
-                Internal.Data.Backup.EvalCount := Internal.Data.Backup.EvalCount + 1;
-                Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
-                IF Internal.Data.Init.ShuttleEvalCount >= Internal.Data.Init.NumShuttles THEN
-                    Internal.State := slREC_STATE_MESH_ZONE_SYNC;
+                Internal.Status := tbBufferAddSh(ADR(StagingBuffer), ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]));
+                IF Internal.Status = ERR_OK THEN
+                    Internal.Data.Backup.EvalCount := Internal.Data.Backup.EvalCount + 1;
+                    Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
+                    Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
+                    IF Internal.Data.Init.ShuttleEvalCount >= Internal.Data.Init.NumShuttles THEN
+                        Internal.State := slREC_STATE_MESH_ZONE_SYNC;
+                    END_IF
+                ELSE
+                    Error := 1;
+                    ErrorID := Internal.Status;
+                    Internal.State := slREC_STATE_ERROR;
                 END_IF;
             ELSE //Go to final recovery sequence
                 Internal.State := slREC_STATE_PBACKUP_ZONE_RSIZE;
@@ -545,12 +523,25 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- 
                 
             IF Enable THEN
-                Internal.ElasticMoveVel.Axis := ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]);
-                Internal.ElasticMoveVel.Velocity := Parameters.Backup.MoveToBarVelocity;
-                Internal.ElasticMoveVel.Acceleration := Parameters.Backup.MoveToBarAcceleration;
-                Internal.ElasticMoveVel.Deceleration := Parameters.Backup.MoveToBarDeceleration;
-                Internal.ElasticMoveVel.Execute := TRUE;
-                Internal.State := slREC_STATE_PBACKUP_ZONE_NEXT;
+                Internal.ElasticMoveAbs.Axis := ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]);
+                Internal.ElasticMoveAbs.Position := StagingParameters.Position;
+                Internal.ElasticMoveAbs.Velocity := StagingParameters.Velocity;
+                Internal.ElasticMoveAbs.Acceleration := StagingParameters.Acceleration;
+                Internal.ElasticMoveAbs.Deceleration := StagingParameters.Deceleration;
+                Internal.ElasticMoveAbs.Execute := TRUE;
+                IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= StartingParameters.Position THEN
+                    Internal.Status := tbBufferAddSh(ADR(StagingBuffer), ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]));
+                ELSE
+                    Internal.Status := tbBufferAddSh(ADR(LandingBuffer), ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]));
+                END_IF
+                IF Internal.Status = ERR_OK THEN
+                    Internal.State := slREC_STATE_PBACKUP_ZONE_NEXT;
+                ELSE
+                    Internal.ElasticMoveAbs.Execute := FALSE;
+                    Error := 1;
+                    ErrorID := Internal.Status;
+                    Internal.State := slREC_STATE_ERROR;
+                END_IF
             ELSE
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             END_IF
@@ -559,15 +550,15 @@ FUNCTION_BLOCK slStarRecovery
             // ----------------------------------------------------------------------- 
                 
             IF NOT Enable THEN
-                Internal.ElasticMoveVel.Execute := FALSE;
+                Internal.ElasticMoveAbs.Execute := FALSE;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.ElasticMoveVel.Error THEN
-                Internal.ElasticMoveVel.Execute := FALSE;
+            ELSIF Internal.ElasticMoveAbs.Error THEN
+                Internal.ElasticMoveAbs.Execute := FALSE;
                 Error := 1;
-                ErrorID := Internal.ElasticMoveVel.ErrorID;
+                ErrorID := Internal.ElasticMoveAbs.ErrorID;
                 Internal.State := slREC_STATE_ERROR;
-            ELSIF Internal.ElasticMoveVel.Active THEN
-                Internal.ElasticMoveVel.Execute := FALSE;
+            ELSIF Internal.ElasticMoveAbs.Active THEN
+                Internal.ElasticMoveAbs.Execute := FALSE;
                 Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
                 IF Internal.Data.Init.ShuttleEvalCount < Internal.Data.Init.NumShuttles THEN
                     Internal.State := slREC_STATE_PBACKUP_ZONE_RSIZE;
@@ -595,8 +586,8 @@ FUNCTION_BLOCK slStarRecovery
                 END_IF 
             ELSIF Internal.Data.Sync.PocketEvalCount <> 0 THEN
                 Internal.State := slREC_STATE_SYN_ZONE_SYNC; 
-            ELSIF Internal.Data.Backup.EvalCount <> 0 THEN
-                Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
+            ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
+                Internal.State := slREC_STATE_BACKUP_ZONE_SYNC_FI;
             ELSE
                 Internal.State := slREC_STATE_DONE;
             END_IF
@@ -614,148 +605,36 @@ FUNCTION_BLOCK slStarRecovery
                         Internal.Data.Sync.RecoveredCount   := Internal.Data.Sync.RecoveredCount + 1;
                     END_IF;
                 END_FOR;
-            ELSIF Internal.Data.Backup.EvalCount <> 0 THEN
-                Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
+            ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
+                Internal.State := slREC_STATE_BACKUP_ZONE_SYNC_FI;
             ELSE
                 Internal.State := slREC_STATE_DONE;
-            END_IF
-            
-        slREC_STATE_BACKUP_ZONE_TARGET:
-            // ----------------------------------------------------------------------- wait for pocket to come by
-                
-            StarInternal ACCESS Internal.Handle; 
-            IF Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.RecoveredCount] THEN
-                Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Parameters.ProcessPointStartPosition + Parameters.StartOffset); 
-            ELSE 
-                Internal.Data.Backup.PocketOvertakeIndex    := PocketOvertakeDetect(Internal.Handle, Internal.Data.Backup.Positions[Internal.Data.Backup.RecoveredCount]); 
-            END_IF;
-            
-            ReadyForStart := 1;
-            
-            IF NOT Enable THEN
-                Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.Data.Backup.IsBeforeBarrier[Internal.Data.Backup.RecoveredCount] AND NOT Internal.Data.Backup.MovedToBarrier[Internal.Data.Backup.RecoveredCount] THEN 
-                Internal.BarrierCmd.Command := mcACPTRAK_BARRIER_OPEN;
-                Internal.BarrierCmd.ProcessPoint    := ADR(Parameters.Backup.ProcessPointStart);
-                Internal.BarrierCmd.Execute := TRUE;
-                Internal.State  := slREC_STATE_BACKUP_ZONE_BAROPEN;
-            ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
-                Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex   := ClosestSyncPocket(Parameters.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
-                Internal.State  := slREC_STATE_BACKUP_ZONE_SYNC_FI;
-            ELSIF Internal.Data.Backup.PocketOvertakeIndex <> slNO_POCKET_DETECTED THEN
-                Internal.ShResize.Axis := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);
-                Internal.ShResize.Command := mcACPTRAK_RESIZE_DIMENSIONS;
-                Internal.ShResize.ResizeParameter := Parameters.ResizeStart;
-                Internal.ShResize.Execute := TRUE;
-                Internal.State := slREC_STATE_BACKUP_ZONE_SYNC;
-            END_IF;
-            
-        slREC_STATE_BACKUP_ZONE_BAROPEN:
-            
-            IF NOT Enable THEN 
-                Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.BarrierCmd.Done THEN
-                Internal.BarrierCmd.Execute := FALSE;
-                Internal.ElasticMoveAbs.Axis    := ADR(Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount]);
-                Internal.ElasticMoveAbs.Position    := Parameters.ProcessPointStartPosition;
-                Internal.ElasticMoveAbs.Velocity    := Parameters.Backup.MoveToBarVelocity;
-                Internal.ElasticMoveAbs.Acceleration    := Parameters.Backup.MoveToBarAcceleration;
-                Internal.ElasticMoveAbs.Deceleration    := Parameters.Backup.MoveToBarDeceleration;
-                Internal.ElasticMoveAbs.Execute := TRUE;
-                Internal.State  := slREC_STATE_BACKUP_ZONE_MOVBAR;
-            ELSIF Internal.BarrierCmd.Error THEN
-                Internal.BarrierCmd.Execute := FALSE;
-                Error := 1;
-                ErrorID := Internal.BarrierCmd.ErrorID;
-                Internal.State := slREC_STATE_ERROR;
-            END_IF;
-        
-        slREC_STATE_BACKUP_ZONE_MOVBAR:
-            
-            IF NOT Enable THEN
-                Internal.ElasticMoveAbs.Execute := FALSE;
-                Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.ElasticMoveAbs.Done THEN
-                Internal.ElasticMoveAbs.Execute := FALSE;
-                Internal.BarrierCmd.Command := mcACPTRAK_BARRIER_CLOSE;
-                Internal.BarrierCmd.ProcessPoint    := ADR(Parameters.Backup.ProcessPointStart);
-                Internal.BarrierCmd.Execute := TRUE;
-                Internal.State  := slREC_STATE_BACKUP_ZONE_BARCLOSE;
-            ELSIF Internal.ElasticMoveAbs.CommandAborted THEN
-                Internal.ElasticMoveAbs.Execute := FALSE;
-                Error := 1;
-                ErrorID := Internal.ElasticMoveAbs.ErrorID;
-                Internal.State := slREC_STATE_ERROR;
-            ELSIF Internal.ElasticMoveAbs.Error THEN
-                Internal.ElasticMoveAbs.Execute := FALSE;
-                Error := 1;
-                ErrorID := slERR_RECOV_MOVEMNT_ABORTED;
-                Internal.State := slREC_STATE_ERROR;
-            END_IF;
-            
-        slREC_STATE_BACKUP_ZONE_BARCLOSE: 
-            
-            IF NOT Enable THEN 
-                Internal.BarrierCmd.Execute := FALSE;
-                Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.BarrierCmd.Done THEN
-                Internal.BarrierCmd.Execute := FALSE;
-                Internal.Data.Backup.MovedToBarrier[Internal.Data.Backup.RecoveredCount]    := TRUE;
-                Internal.State  := slREC_STATE_BACKUP_ZONE_TARGET;
-            ELSIF Internal.BarrierCmd.Error THEN
-                Internal.BarrierCmd.Execute := FALSE;
-                Error := 1;
-                ErrorID := Internal.BarrierCmd.ErrorID;
-                Internal.State := slREC_STATE_ERROR;
-            END_IF;
-            
-        slREC_STATE_BACKUP_ZONE_SYNC:
-            // ----------------------------------------------------------------------- 
-                
-            StarInternal ACCESS Internal.Handle; 
-            
-            IF NOT Enable THEN
-                Internal.ShResize.Execute := FALSE;
-                Internal.State := slREC_STATE_WAIT_NOT_BUSY;
-            ELSIF Internal.ShResize.Error THEN
-                Internal.ShResize.Execute := 0;
-                Error := 1;
-                ErrorID := Internal.ShResize.ErrorID;
-                Internal.State := slREC_STATE_ERROR;
-            ELSIF Internal.ShResize.Done THEN
-                Internal.ShResize.Execute := 0;
-                IF StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Sync THEN
-                    Error := 1;
-                    ErrorID := slERR_TARGET_ALREADY_SYNCED;
-                    Internal.State := slREC_STATE_ERROR;
-                ELSE
-                    StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
-                    StarInternal.PocketSync[Internal.Data.Backup.PocketOvertakeIndex].Sync := 1;
-                    Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
-                    IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
-                        Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
-                    ELSE
-                        Internal.State := slREC_STATE_DONE;
-                    END_IF
-                END_IF
             END_IF
         
         slREC_STATE_BACKUP_ZONE_SYNC_FI:
             
             StarInternal ACCESS Internal.Handle; 
             
-            IF (Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex <> slNO_CLOSEST_POCKET_FOUND) AND (Internal.Data.Backup.RecoveredCount <> Internal.Data.Backup.EvalCount) THEN
-                StarInternal.PocketSync[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex].Axis := Internal.Data.Backup.Axes[Internal.Data.Backup.RecoveredCount];
-                StarInternal.PocketSync[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex].Sync := TRUE;
-                Internal.Data.Backup.RecoveredCount := Internal.Data.Backup.RecoveredCount + 1;
-                Internal.State  := slREC_STATE_BACKUP_ZONE_TARGET;
-            ELSE
-                Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished    := TRUE;
-                IF Internal.Data.Backup.RecoveredCount < Internal.Data.Backup.EvalCount THEN
-                    Internal.State := slREC_STATE_BACKUP_ZONE_TARGET;
+            Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex := ClosestSyncPocket(Parameters.MeshZoneStartPos, StagingParameters.Position + Parameters.StartOffset, Internal.Handle);
+            IF (Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex <> slNO_CLOSEST_POCKET_FOUND) AND tbBufferShAvailable(ADR(StagingBuffer)) THEN
+                Internal.Status := tbBufferGetFirst(ADR(StagingBuffer), ADR(Internal.Axis));
+                IF Internal.Status = ERR_OK THEN
+                    StarInternal.PocketSync[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex].Axis := Internal.Axis;
+                    StarInternal.PocketSync[Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex].Sync := TRUE;
+                    Internal.Status := tbBufferRemoveFirst(ADR(StagingBuffer));
+                    IF Internal.Status <> ERR_OK THEN
+                        Error := 1;
+                        ErrorID := Internal.Status;
+                        Internal.State := slREC_STATE_ERROR;
+                    END_IF
                 ELSE
-                    Internal.State := slREC_STATE_DONE;
+                    Error := 1;
+                    ErrorID := Internal.Status;
+                    Internal.State := slREC_STATE_ERROR;
                 END_IF
+            ELSE
+                Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished := TRUE;
+                Internal.State := slREC_STATE_DONE;
             END_IF;
             
         slREC_STATE_GET_USERDATA:
@@ -833,7 +712,7 @@ FUNCTION_BLOCK slStarRecovery
             
         slREC_STATE_WAIT_NOT_BUSY:
             
-            IF NOT Internal.SecGetShuttle.Busy OR Internal.ShResize.Busy OR Internal.RoutedMoveVel.Busy OR Internal.ElasticMoveVel.Busy OR Internal.ShCopyUserData.Busy THEN
+            IF NOT (Internal.SecGetShuttle.Busy OR Internal.ShSwitchSector.Busy OR Internal.ShResize.Busy OR Internal.RoutedMoveVel.Busy OR Internal.ElasticMoveAbs.Busy OR Internal.ShCopyUserData.Busy) THEN
                 Busy := 0;
                 Internal.State := slREC_STATE_IDLE;
             END_IF
@@ -851,13 +730,10 @@ FUNCTION_BLOCK slStarRecovery
     END_CASE
     
     Internal.SecGetShuttle();
+    Internal.ShSwitchSector();
     Internal.ShResize();
     Internal.RoutedMoveVel();
-    Internal.ElasticMoveVel();
     Internal.ElasticMoveAbs();
     Internal.ShCopyUserData();
-    Internal.BarrierCmd();
-    Internal.AsmGetInfo();
-    Internal.RoutedMoveAbs();
     
 END_FUNCTION_BLOCK

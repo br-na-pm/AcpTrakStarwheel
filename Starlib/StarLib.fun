@@ -97,7 +97,6 @@ FUNCTION_BLOCK slStarSync (*Star synchronization*)
 	VAR_INPUT
 		Sector : REFERENCE TO McSectorType; (*Sector for starwheel*)
 		DestinationSector : REFERENCE TO McSectorType; (*Sector to send shuttles to after processing*)
-		Assembly : REFERENCE TO McAssemblyType;
 		ProcessPoint : REFERENCE TO McProcessPointType; (*Process point at the start of the sector*)
 		Enable : BOOL; (*Enable starwheel*)
 		SkipPockets : BOOL; (*Skip pockets when true*)
@@ -123,8 +122,12 @@ FUNCTION_BLOCK slStarRecovery (*Recover shuttles in the starwheel*)
 	VAR_INPUT
 		Sector : REFERENCE TO McSectorType; (*Sector for starwheel*)
 		DestinationSector : REFERENCE TO McSectorType; (*Sector to send shuttles to after processing*)
-		Assembly : REFERENCE TO McAssemblyType;
+		LandingBuffer : REFERENCE TO tbAsyncShuttleBufferType; (*Landing buffer*)
+		StagingBuffer : REFERENCE TO tbAsyncShuttleBufferType; (*Staging buffer*)
 		Parameters : REFERENCE TO slStarRecoveryParType; (*Starwheel recovery parameters*)
+		StartingParameters : REFERENCE TO slStarSyncStartingParType; (*Starting parameters*)
+		StagingParameters : REFERENCE TO slStarSyncStagingParType; (*Staging parameters*)
+		DestinationParameters : REFERENCE TO slStarPocketDestParType; (*Starwheel Destination Parameters*)
 		Handle : UDINT; (*Starwheel internal data handle*)
 		Enable : BOOL; (*Enable recovery process*)
 	END_VAR

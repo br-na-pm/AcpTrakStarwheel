@@ -105,23 +105,12 @@ TYPE
 		ResizeStart : McAcpTrakShResizeParamType; (*Resize dimensions at start of synchronization*)
 		ResizeEnd : McAcpTrakShResizeParamType; (*Resize dimensions at end of synchronization*)
 		SyncFurtherInEnabled : BOOL;
-		Release : slStarRecoveryParReleaseType; (*Recovery Release Parameters*)
-		ProcessPointStartPosition : LREAL; (*Position on the sector of the process point that starts the synchronization*)
 		StartOffset : LREAL; (*Offset from the process point before synchronizing*)
 		PocketErrorTolerance : LREAL; (*Allowed pocket error tolerance*)
 		UserData : slStarRecoveryParUserDataType; (*UserData parameters*)
-		Backup : slStarRecoveryParBackupType;
-		ShExtentToFront : LREAL;
 		SectorTangentPos : REAL;
 		MeshZoneStartPos : LREAL; (*Starwheel dimensions*)
 		MeshZoneEndPos : LREAL;
-	END_STRUCT;
-	slStarRecoveryParBackupType : 	STRUCT  (*Recovery Release Parameters*)
-		BackupTolerance : LREAL;
-		ProcessPointStart : McProcessPointType; (*Position on the sector of the process point that starts the synchronization*)
-		MoveToBarAcceleration : REAL;
-		MoveToBarDeceleration : REAL;
-		MoveToBarVelocity : REAL;
 	END_STRUCT;
 	slStarRecoveryParUserDataType : 	STRUCT  (*UserData parameters*)
 		UserDataAddress : UDINT; (*Pointer to the user data buffer*)
@@ -130,25 +119,18 @@ TYPE
 		DstUserDataWriteAddress : UDINT; (*Destination within the user data buffer to write*)
 		UserDataWriteSize : UDINT; (*Size of the data to write to the user data buffer*)
 	END_STRUCT;
-	slStarRecoveryParReleaseType : 	STRUCT  (*Recovery Release Parameters*)
-		Position : LREAL; (*Release position of the starwheel*)
-		Velocity : REAL; (*Recovery Velocity*)
-		Acceleration : REAL; (*Recovery Acceleration*)
-		Deceleration : REAL; (*Recovery Deceleration*)
-	END_STRUCT;
 	slStarRecoveryInternalType : 	STRUCT  (*Internal Data*)
 		Handle : UDINT; (*Handle to the starwheel internal data*)
 		SecGetShuttle : MC_BR_SecGetShuttle_AcpTrak; (*Get shuttles on the sector*)
+		ShSwitchSector : MC_BR_ShSwitchSector_AcpTrak; (*Attach shuttle to sector*)
 		ShResize : MC_BR_ShResize_AcpTrak; (*Resize shuttle*)
 		RoutedMoveVel : MC_BR_RoutedMoveVel_AcpTrak; (*Send shuttle*)
-		RoutedMoveAbs : MC_BR_RoutedMoveAbs_AcpTrak;
-		ElasticMoveVel : MC_BR_ElasticMoveVel_AcpTrak; (*Send the shuttle*)
-		ElasticMoveAbs : MC_BR_ElasticMoveAbs_AcpTrak;
+		ElasticMoveAbs : MC_BR_ElasticMoveAbs_AcpTrak; (*Move shuttle to staging position*)
 		ShCopyUserData : MC_BR_ShCopyUserData_AcpTrak; (*Copy user data*)
-		AsmGetInfo : MC_BR_AsmGetInfo_AcpTrak; (*Used to see if sectors are being simulated*)
-		BarrierCmd : MC_BR_BarrierCommand_AcpTrak;
 		OldRemainingCount : UINT; (*Previously recorded remaining count*)
 		Data : slStarRecoveryInternalDataType; (*Data*)
+		Status : DINT; (*Status*)
+		Axis : McAxisType; (*Axis*)
 		State : slStarRecoveryStateEnum; (*State of execution*)
 		i : USINT; (*Index*)
 	END_STRUCT;
@@ -222,8 +204,6 @@ TYPE
 		Axes : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF McAxisType; (*Axes found in the backup area*)
 		Positions : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF LREAL;
 		RecoveredCount : USINT; (*Number of shuttles recovered*)
-		IsBeforeBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicates if a shuttle is in the backup zone but before the barrier (have to move to gaurantee it won't get stuck at the barrier)*)
-		MovedToBarrier : ARRAY[0..slMAX_SH_IDX_IN_SEC]OF BOOL; (*Indicated if a shuttle has been moved to the barrier location*)
 		SyncFurtherIn : slStarRecoveryDataBackupFIType;
 		Position : LREAL;
 		PocketOvertakeIndex : UINT;
@@ -235,9 +215,8 @@ TYPE
 	slStarRecoveryStateEnum : 
 		( (*State of execution*)
 		slREC_STATE_IDLE, (*Idle state*)
-		slREC_STATE_CHECK_SECTOR_SIM,
 		slREC_STATE_GET_SHUTTLES, (*Get shuttles on the sector*)
-		slREC_STATE_ATTACH_TO_SECTOR,
+		slREC_STATE_ATTACH_TO_SECTOR, (*Attach shuttles to sector*)
 		slREC_STATE_GET_SHUTTLES_NEXT, (*Get the next shuttle on the sector*)
 		slREC_STATE_RELEASE_ZONE_CHECK, (*Check for shuttles in the release zone*)
 		slREC_STATE_RELEASE_ZONE_RESIZE, (*Resize shuttles in the release zone*)
@@ -260,11 +239,6 @@ TYPE
 		slREC_STATE_MESH_ZONE_SYNC, (*Sync shuttles in the sync zone*)
 		slREC_STATE_SYN_GET_USERDATA, (*Get sync zone userdata*)
 		slREC_STATE_SYN_SET_USERDATA, (*Set sync zone userdata*)
-		slREC_STATE_BACKUP_ZONE_TARGET, (*Wait for a target for shuttle in backup zone*)
-		slREC_STATE_BACKUP_ZONE_BAROPEN, (*Wait for a target for shuttle in backup zone*)
-		slREC_STATE_BACKUP_ZONE_MOVBAR,
-		slREC_STATE_BACKUP_ZONE_BARCLOSE,
-		slREC_STATE_BACKUP_ZONE_SYNC, (*Sync shuttle in backup zone to target*)
 		slREC_STATE_BACKUP_ZONE_SYNC_FI, (*Backup zone sync further in*)
 		slREC_STATE_BACKUP_GET_USERDATA, (*Get backup zone userdata*)
 		slREC_STATE_BACKUP_SET_USERDATA, (*Set backup zone userdata*)
@@ -292,7 +266,6 @@ TYPE
 		Destination : slStarPocketDestParType; (*Destination parameters*)
 		Recovery : slStarSyncRecoveryParType; (*Star parameters for recovery*)
 		Skip : slStarSyncSkipParType; (*Skip parameters*)
-		ShExtentToFront : LREAL;
 	END_STRUCT;
 	slStarSyncLandingParType : 	STRUCT  (*Landing parameters*)
 		Position : LREAL; (*Target Position*)
@@ -312,19 +285,9 @@ TYPE
 		Deceleration : REAL; (*Target Deceleration*)
 	END_STRUCT;
 	slStarSyncRecoveryParType : 	STRUCT  (*Star parameters for recovery*)
-		Release : slStarSyncRecoveryReleaseType; (*Release parameters*)
 		UserData : slStarRecoveryParUserDataType; (*User data buffer data for successful recovery*)
 		SyncFurtherInEnabled : BOOL;
 		PocketErrorTolerance : LREAL; (*Pocket error tolerance for resynchronization*)
-		MoveToBarVelocity : REAL;
-		MoveToBarAcceleration : REAL;
-		MoveToBarDeceleration : REAL;
-		BackupTolerance : LREAL;
-	END_STRUCT;
-	slStarSyncRecoveryReleaseType : 	STRUCT  (*Release parameters*)
-		Velocity : REAL; (*Recovery Velocity*)
-		Acceleration : REAL; (*Recovery Acceleration*)
-		Deceleration : REAL; (*Recovery Deceleration*)
 	END_STRUCT;
 	slStarSyncSkipParType : 	STRUCT  (*Skip parameters*)
 		NumSkips : USINT; (*Number of skips if skipping is enabled*)

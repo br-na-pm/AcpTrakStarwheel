@@ -139,28 +139,21 @@ FUNCTION_BLOCK slStarSync
             Internal.RecoveryPar.SyncFurtherInEnabled   := Parameters.Recovery.SyncFurtherInEnabled;
             Internal.RecoveryPar.MeshZoneEndPos     := Internal.MeshZoneEndPos;
             Internal.RecoveryPar.SectorTangentPos   := Parameters.SyncPar.StarCalcTarget.SectorTangentPos;
-            Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
-            Internal.RecoveryPar.ProcessPointStartPosition := Parameters.Staging.Position;
             Internal.RecoveryPar.StartOffset := Parameters.StartOffset;
             Internal.RecoveryPar.ResizeStart := Parameters.ResizeStart.ResizeParameters;
             Internal.RecoveryPar.ResizeEnd := Parameters.ResizeEnd.ResizeParameters;
-            Internal.RecoveryPar.Release.Position := Parameters.Release.Position;
-            Internal.RecoveryPar.Release.Velocity := Parameters.Recovery.Release.Velocity;
-            Internal.RecoveryPar.Release.Acceleration := Parameters.Recovery.Release.Acceleration;
-            Internal.RecoveryPar.Release.Deceleration := Parameters.Recovery.Release.Deceleration;
             Internal.RecoveryPar.UserData := Parameters.Recovery.UserData;
             Internal.RecoveryPar.PocketErrorTolerance := Parameters.Recovery.PocketErrorTolerance;
-            Internal.RecoveryPar.Backup.ProcessPointStart := ProcessPoint;
-            Internal.RecoveryPar.Backup.BackupTolerance := Parameters.Recovery.BackupTolerance;
-            Internal.RecoveryPar.Backup.MoveToBarVelocity   := Parameters.Recovery.MoveToBarVelocity;
-            Internal.RecoveryPar.Backup.MoveToBarAcceleration   := Parameters.Recovery.MoveToBarAcceleration;
-            Internal.RecoveryPar.Backup.MoveToBarDeceleration   := Parameters.Recovery.MoveToBarDeceleration;
             
             Internal.Recovery.Parameters := ADR(Internal.RecoveryPar);
+            Internal.Recovery.StartingParameters := ADR(Parameters.Starting);
+            Internal.Recovery.StagingParameters := ADR(Parameters.Staging);
+            Internal.Recovery.DestinationParameters := ADR(Parameters.Destination);
             Internal.Recovery.Sector := ADR(Sector);
             Internal.Recovery.DestinationSector := ADR(DestinationSector);
+            Internal.Recovery.LandingBuffer := ADR(Internal.LandingBuffer);
+            Internal.Recovery.StagingBuffer := ADR(Internal.StagingBuffer);
             Internal.Recovery.Handle := Handle;
-            Internal.Recovery.Assembly  := ADR(Assembly);
             Internal.Recovery.Enable := 1;
             
             IF Internal.Recovery.ReadyForStart THEN
