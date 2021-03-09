@@ -104,8 +104,13 @@ FUNCTION_BLOCK slStarSync
 					                    
                     FOR Internal.i := 0 TO slMAX_TARGET_IDX  DO
                         Internal.PocketSync[Internal.i].TargetIndex := UINT_TO_USINT(Internal.i);
+                        Internal.PocketSync[Internal.i].DestinationSector := ADR(DestinationSector);
                         Internal.PocketSync[Internal.i].PeriodCount := Internal.PeriodCount;
                         Internal.PocketSync[Internal.i].Parameters := ADR(Parameters.SyncPar);
+                        Internal.PocketSync[Internal.i].ResizeStartParameters := ADR(Parameters.ResizeStart);
+                        Internal.PocketSync[Internal.i].ReleaseParameters := ADR(Parameters.Release);
+                        Internal.PocketSync[Internal.i].ResizeEndParameters := ADR(Parameters.ResizeEnd);
+                        Internal.PocketSync[Internal.i].DestinationParameters := ADR(Parameters.Destination);
                         Internal.PocketSync[Internal.i].CalcData := ADR(Internal.StarCalcData);
                         Internal.PocketSync[Internal.i].Enable := (Internal.i <= Internal.MaxTargetIndex);
                     END_FOR
@@ -125,9 +130,9 @@ FUNCTION_BLOCK slStarSync
             Internal.RecoveryPar.ShExtentToFront        := Parameters.ShExtentToFront;
             Internal.RecoveryPar.ProcessPointStartPosition := Parameters.Staging.Position;
             Internal.RecoveryPar.StartOffset := Parameters.StartOffset;
-            Internal.RecoveryPar.ResizeStart := Parameters.SyncPar.ResizeStart;
-            Internal.RecoveryPar.ResizeEnd := Parameters.SyncPar.ResizeEnd;
-            Internal.RecoveryPar.Release.Position := Parameters.SyncPar.Release.Position;
+            Internal.RecoveryPar.ResizeStart := Parameters.ResizeStart.ResizeParameters;
+            Internal.RecoveryPar.ResizeEnd := Parameters.ResizeEnd.ResizeParameters;
+            Internal.RecoveryPar.Release.Position := Parameters.Release.Position;
             Internal.RecoveryPar.Release.DestinationSector := Parameters.Recovery.Release.DestinationSector;
             Internal.RecoveryPar.Release.Velocity := Parameters.Recovery.Release.Velocity;
             Internal.RecoveryPar.Release.Acceleration := Parameters.Recovery.Release.Acceleration;

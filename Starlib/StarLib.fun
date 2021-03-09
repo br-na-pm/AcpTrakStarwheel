@@ -68,11 +68,16 @@ FUNCTION_BLOCK slStarPocketSync (*Synchronize a shuttle with a pocket*)
 	VAR_INPUT
 		TargetIndex : USINT; (*Index to generate a position for*)
 		PeriodCount : USINT; (*Number of periods to monitor*)
+		DestinationSector : REFERENCE TO McSectorType; (*Sector to send shuttles to after processing*)
 		Enable : BOOL; (*Enable syncing to the pocket*)
 		Axis : {REDUND_UNREPLICABLE} McAxisType; (*Shuttle to sync with pocket*)
 		Sync : BOOL; (*Synchronize on rising edge*)
 		CalcData : REFERENCE TO slStarSyncCalcDataType;
 		Parameters : REFERENCE TO slStarPocketSyncParType; (*Pocket Sync Parameters*)
+		ResizeStartParameters : REFERENCE TO slStarPocketResizeStartParType; (*Parameters for resizing shuttles at the start of synchronization*)
+		ReleaseParameters : REFERENCE TO slStarPocketReleaseParType; (*Parameters for releasing shuttles at the end of the synchronization*)
+		ResizeEndParameters : REFERENCE TO slStarPocketResizeEndParType; (*Parameters for resizing shuttles at the end of the synchronization*)
+		DestinationParameters : REFERENCE TO slStarPocketDestParType; (*Pocket Destination Parameters*)
 	END_VAR
 	VAR_OUTPUT
 		Busy : BOOL; (*Function Block is busy and must continue to be called*)
@@ -91,6 +96,7 @@ END_FUNCTION_BLOCK
 FUNCTION_BLOCK slStarSync (*Star synchronization*)
 	VAR_INPUT
 		Sector : REFERENCE TO McSectorType; (*Sector for starwheel*)
+		DestinationSector : REFERENCE TO McSectorType; (*Sector to send shuttles to after processing*)
 		Assembly : REFERENCE TO McAssemblyType;
 		ProcessPoint : REFERENCE TO McProcessPointType; (*Process point at the start of the sector*)
 		Enable : BOOL; (*Enable starwheel*)
