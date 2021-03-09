@@ -122,6 +122,7 @@ END_FUNCTION_BLOCK
 FUNCTION_BLOCK slStarRecovery (*Recover shuttles in the starwheel*)
 	VAR_INPUT
 		Sector : REFERENCE TO McSectorType; (*Sector for starwheel*)
+		DestinationSector : REFERENCE TO McSectorType; (*Sector to send shuttles to after processing*)
 		Assembly : REFERENCE TO McAssemblyType;
 		Parameters : REFERENCE TO slStarRecoveryParType; (*Starwheel recovery parameters*)
 		Handle : UDINT; (*Starwheel internal data handle*)

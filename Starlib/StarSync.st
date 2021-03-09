@@ -133,7 +133,6 @@ FUNCTION_BLOCK slStarSync
             Internal.RecoveryPar.ResizeStart := Parameters.ResizeStart.ResizeParameters;
             Internal.RecoveryPar.ResizeEnd := Parameters.ResizeEnd.ResizeParameters;
             Internal.RecoveryPar.Release.Position := Parameters.Release.Position;
-            Internal.RecoveryPar.Release.DestinationSector := Parameters.Recovery.Release.DestinationSector;
             Internal.RecoveryPar.Release.Velocity := Parameters.Recovery.Release.Velocity;
             Internal.RecoveryPar.Release.Acceleration := Parameters.Recovery.Release.Acceleration;
             Internal.RecoveryPar.Release.Deceleration := Parameters.Recovery.Release.Deceleration;
@@ -147,6 +146,7 @@ FUNCTION_BLOCK slStarSync
             
             Internal.Recovery.Parameters := ADR(Internal.RecoveryPar);
             Internal.Recovery.Sector := ADR(Sector);
+            Internal.Recovery.DestinationSector := ADR(DestinationSector);
             Internal.Recovery.Handle := Handle;
             Internal.Recovery.Assembly  := ADR(Assembly);
             Internal.Recovery.Enable := 1;

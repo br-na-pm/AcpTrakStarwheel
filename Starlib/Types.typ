@@ -135,7 +135,6 @@ TYPE
 		Velocity : REAL; (*Recovery Velocity*)
 		Acceleration : REAL; (*Recovery Acceleration*)
 		Deceleration : REAL; (*Recovery Deceleration*)
-		DestinationSector : McSectorType; (*Recovery Destination Sector*)
 	END_STRUCT;
 	slStarRecoveryInternalType : 	STRUCT  (*Internal Data*)
 		Handle : UDINT; (*Handle to the starwheel internal data*)
@@ -326,7 +325,6 @@ TYPE
 		Velocity : REAL; (*Recovery Velocity*)
 		Acceleration : REAL; (*Recovery Acceleration*)
 		Deceleration : REAL; (*Recovery Deceleration*)
-		DestinationSector : McSectorType; (*Recovery Destination Sector*)
 	END_STRUCT;
 	slStarSyncSkipParType : 	STRUCT  (*Skip parameters*)
 		NumSkips : USINT; (*Number of skips if skipping is enabled*)

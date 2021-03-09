@@ -158,7 +158,7 @@ FUNCTION_BLOCK slStarRecovery
             ELSIF Internal.ShResize.Done THEN
                 Internal.ShResize.Execute := 0;
                 Internal.RoutedMoveVel.Axis := ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]);
-                Internal.RoutedMoveVel.Sector := ADR(Parameters.Release.DestinationSector);
+                Internal.RoutedMoveVel.Sector := ADR(DestinationSector);
                 Internal.RoutedMoveVel.Velocity := Parameters.Release.Velocity;
                 Internal.RoutedMoveVel.Acceleration := Parameters.Release.Acceleration;
                 Internal.RoutedMoveVel.Deceleration := Parameters.Release.Deceleration;
