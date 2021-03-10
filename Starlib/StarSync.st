@@ -173,6 +173,9 @@ FUNCTION_BLOCK slStarSync
                 Internal.LandingBufferMan.Enable := 1;
                 Internal.StagingBufferMan.Enable := 1;
                 Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Staging.Position + Parameters.StartOffset, Handle);
+                IF Internal.NextSyncFITarget = slNO_CLOSEST_POCKET_FOUND THEN
+                    Internal.SyncFurtherInDone := 1;
+                END_IF
                 Internal.State := slSTAR_STATE_WAIT_BUFFER_START;
             END_IF
             
