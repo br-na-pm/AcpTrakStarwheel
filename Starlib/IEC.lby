@@ -15,7 +15,6 @@
     <File Description="StarDiagLastStateError Implementation">StarDiagLastStateError.st</File>
     <File Description="StarDiagStateTrace Implementation">StarDiagStateTrace.st</File>
     <File>ClosestSyncPocket.st</File>
-    <File>PocketOvertakeDetect.st</File>
     <File>README.md</File>
   </Files>
   <Dependencies>
