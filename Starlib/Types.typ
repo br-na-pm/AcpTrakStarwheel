@@ -85,6 +85,7 @@ TYPE
 		slPOCKET_SYN_STATE_IDLE, (*Idle state*)
 		slPOCKET_SYN_STATE_WAIT_SYNC, (*Wait for sync*)
 		slPOCKET_SYN_STATE_RESIZE_START, (*Resize shuttle for start of sync*)
+		slPOCKET_SYN_STATE_WAIT_TARGET, (*Wait for the target to overtake the shuttle position*)
 		slPOCKET_SYN_STATE_SYNC, (*Perform synchronization*)
 		slPOCKET_SYN_STATE_RELEASE, (*Release shuttle*)
 		slPOCKET_SYN_STATE_WAIT_RESIZE, (*Wait for the shuttle to reach the position to resize*)

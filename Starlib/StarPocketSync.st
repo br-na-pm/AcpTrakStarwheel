@@ -77,6 +77,22 @@ FUNCTION_BLOCK slStarPocketSync
                 Internal.State := slPOCKET_SYN_STATE_RESET_FB;
             ELSIF Internal.Resize.Done THEN
                 Internal.Resize.Execute := 0;
+                Internal.State := slPOCKET_SYN_STATE_WAIT_TARGET;
+            END_IF
+            
+        slPOCKET_SYN_STATE_WAIT_TARGET:
+            
+            IF NOT Enable THEN
+                Internal.State := slPOCKET_SYN_STATE_RESET_FB;
+            ELSIF Internal.StarCalcTarget.Error THEN
+                Error := 1;
+                ErrorID := Internal.StarCalcTarget.ErrorID;
+                Internal.State := slPOCKET_SYN_STATE_RESET_FB;
+            ELSIF Internal.ShReadInfo.Error THEN
+                Error := 1;
+                ErrorID := Internal.ShReadInfo.ErrorID;
+                Internal.State := slPOCKET_SYN_STATE_RESET_FB;
+            ELSIF Internal.ShReadInfo.Valid AND (Internal.StarCalcTarget.TrakPos >= Internal.ShReadInfo.ShuttleInfo.CurrentValues.Position) THEN
                 IF Internal.StarCalcTarget.Valid THEN
                     Internal.CycPos.Enable := 1;
                     Internal.CycPos.CyclicPosition := Internal.StarCalcTarget.TrakPos;

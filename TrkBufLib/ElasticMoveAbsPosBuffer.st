@@ -81,7 +81,7 @@ FUNCTION_BLOCK tbElasticMoveAbsPosBuffer
                 Error := 1;
                 ErrorID := Internal.ElasticMoveAbs.ErrorID;
                 Internal.State := tbELA_POS_BUF_STATE_RESET_FB;
-            ELSIF Internal.ElasticMoveAbs.Active THEN
+            ELSIF Internal.ElasticMoveAbs.Active OR Internal.ElasticMoveAbs.Done THEN
                 Internal.ElasticMoveAbs.Execute := 0;
                 Internal.Status := tbBufferRemoveFirst(ADR(BufferIn));
                 IF Internal.Status = ERR_OK THEN
