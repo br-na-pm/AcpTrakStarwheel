@@ -594,15 +594,19 @@ FUNCTION_BLOCK slStarRecovery
             
         slREC_STATE_SYN_ZONE_SYNC:        
             
-            ReadyForStart := 1;
             IF NOT Enable THEN
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             ELSIF Internal.Data.Sync.RecoveredCount < Internal.Data.Sync.PocketEvalCount THEN
                 FOR Internal.i := 0 TO Internal.Data.Sync.PocketEvalCount - 1 DO
-                    IF StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.i]].TargetPosition >= Internal.Data.Sync.ShuttlePos[Internal.i] AND NOT StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.i]].Sync THEN
+                    IF NOT StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.i]].Sync THEN
                         StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.i]].Axis := Internal.Data.Sync.Axes[Internal.i];
                         StarInternal.PocketSync[Internal.Data.Sync.PocketIndices[Internal.i]].Sync := TRUE;
                         Internal.Data.Sync.RecoveredCount   := Internal.Data.Sync.RecoveredCount + 1;
+                    ELSE
+                        Error := 1;
+                        ErrorID := slERR_TARGET_ALREADY_SYNCED;
+                        Internal.State := slREC_STATE_ERROR;
+                        EXIT;
                     END_IF;
                 END_FOR;
             ELSIF Parameters.SyncFurtherInEnabled AND NOT Internal.Data.Backup.SyncFurtherIn.SyncFurtherInFinished THEN
@@ -702,10 +706,8 @@ FUNCTION_BLOCK slStarRecovery
         slREC_STATE_DONE:
             
             Done := 1;
-            ReadyForStart := 1;
             
             IF NOT Enable THEN
-                ReadyForStart := 0;
                 Done:= 0;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             END_IF
@@ -718,8 +720,6 @@ FUNCTION_BLOCK slStarRecovery
             END_IF
         
         slREC_STATE_ERROR:
-        
-            ReadyForStart := 0;
             
             IF NOT Enable THEN
                 Error := 0;

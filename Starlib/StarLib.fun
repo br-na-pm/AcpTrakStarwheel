@@ -122,7 +122,6 @@ FUNCTION_BLOCK slStarRecovery (*Recover shuttles in the starwheel*)
 	END_VAR
 	VAR_OUTPUT
 		Busy : BOOL; (*The function block is busy and must continue to be called*)
-		ReadyForStart : BOOL; (*The function block is ready for starwheel movement*)
 		Done : BOOL; (*Recovery is complete*)
 		Error : BOOL; (*An error occurred*)
 		ErrorID : DINT; (*ID of the error that occurred*)

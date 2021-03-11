@@ -156,10 +156,6 @@ FUNCTION_BLOCK slStarSync
             Internal.Recovery.Handle := Handle;
             Internal.Recovery.Enable := 1;
             
-            IF Internal.Recovery.ReadyForStart THEN
-                ReadyForStart := 1;
-            END_IF;
-            
             IF NOT Enable THEN
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF Internal.Recovery.Error THEN
