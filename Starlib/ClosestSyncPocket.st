@@ -31,6 +31,10 @@ FUNCTION ClosestSyncPocket
         IF StarInternal.PocketSync[CurrentEvalPocket].Sync THEN
             CurrentEvalPocket   := PrevEvalPocket;
             EXIT;
+        ELSIF CurrentEvalPocket = LastSyncPocketIndex THEN
+            CurrentEvalPocketValid  := TRUE;
+            ClosestSyncPocket   := CurrentEvalPocket;
+            EXIT;
         ELSE 
             CurrentEvalPocketValid  := TRUE;
             ClosestSyncPocket   := CurrentEvalPocket;
