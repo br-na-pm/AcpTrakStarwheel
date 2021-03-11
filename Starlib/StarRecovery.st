@@ -557,7 +557,7 @@ FUNCTION_BLOCK slStarRecovery
                 Error := 1;
                 ErrorID := Internal.ElasticMoveAbs.ErrorID;
                 Internal.State := slREC_STATE_ERROR;
-            ELSIF Internal.ElasticMoveAbs.Active THEN
+            ELSIF Internal.ElasticMoveAbs.Active OR Internal.ElasticMoveAbs.Done THEN
                 Internal.ElasticMoveAbs.Execute := FALSE;
                 Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
                 IF Internal.Data.Init.ShuttleEvalCount < Internal.Data.Init.NumShuttles THEN
