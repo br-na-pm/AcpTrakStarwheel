@@ -168,7 +168,7 @@ FUNCTION_BLOCK slStarSync
                 Internal.Recovery.Enable := 0;
                 Internal.LandingBufferMan.Enable := 1;
                 Internal.StagingBufferMan.Enable := 1;
-                Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Staging.Position + Parameters.StartOffset, Handle);
+                Internal.NextSyncFITarget   := ClosestSyncPocket(Parameters.Staging.Position + Parameters.StartOffset, Internal.MeshZoneStartPos, Handle);
                 IF Internal.NextSyncFITarget = slNO_CLOSEST_POCKET_FOUND THEN
                     Internal.SyncFurtherInDone := 1;
                 END_IF
@@ -256,7 +256,7 @@ FUNCTION_BLOCK slStarSync
                 Internal.Status := tbBufferGetFirst(ADR(Internal.StagingBuffer), ADR(Internal.PocketSync[Internal.NextSyncFITarget].Axis));
                 IF Internal.Status = ERR_OK THEN
                     Internal.PocketSync[Internal.NextSyncFITarget].Sync := 1;
-                    Internal.NextSyncFITarget   := ClosestSyncPocket(Internal.MeshZoneStartPos, Parameters.Staging.Position + Parameters.StartOffset, Handle);
+                    Internal.NextSyncFITarget   := ClosestSyncPocket(Parameters.Staging.Position + Parameters.StartOffset, Internal.MeshZoneStartPos, Handle);
                     IF Internal.NextSyncFITarget = slNO_CLOSEST_POCKET_FOUND THEN
                         Internal.SyncFurtherInDone  := TRUE;
                         Internal.NewOvertakeDetected := 0;

@@ -175,7 +175,7 @@ FUNCTION_BLOCK slStarRecovery
                     Internal.State := slREC_STATE_MESH_ZONE_TARGET;
                 ELSE            
                     //IF Parameters.SyncFurtherInEnabled THEN
-                    //    Internal.Data.Sync.PocketEvalIndex    := ClosestSyncPocket(Parameters.MeshZoneStartPos, Parameters.ProcessPointStartPosition + Parameters.StartOffset, Internal.Handle);
+                    //    Internal.Data.Sync.PocketEvalIndex    := ClosestSyncPocket(Parameters.ProcessPointStartPosition + Parameters.StartOffset, Parameters.MeshZoneStartPos, Internal.Handle);
                    // END_IF;
                     Internal.State := slREC_STATE_SYN_ZONE_CHECK;
                 END_IF
@@ -304,7 +304,7 @@ FUNCTION_BLOCK slStarRecovery
                     Internal.Data.Sync.ShuttlePos[Internal.Data.Sync.PocketEvalCount]   := Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount];
                     IF NOT Internal.Data.Sync.SyncFurtherIn.ClosestPocketToMeshFound THEN
                         Internal.Data.Sync.SyncFurtherIn.ClosestPocketToMeshFound   := TRUE;
-                        Internal.Data.Sync.PocketEvalIndex    := ClosestSyncPocket(Parameters.MeshZoneStartPos, StagingParameters.Position + Parameters.StartOffset, Internal.Handle);
+                        Internal.Data.Sync.PocketEvalIndex    := ClosestSyncPocket(StagingParameters.Position + Parameters.StartOffset, Parameters.MeshZoneStartPos, Internal.Handle);
                         IF Internal.Data.Sync.PocketEvalIndex = slNO_CLOSEST_POCKET_FOUND THEN
 	                        Internal.Data.Sync.SyncFurtherIn.NoClosestPocketFound   := TRUE;
                         ELSE
@@ -619,7 +619,7 @@ FUNCTION_BLOCK slStarRecovery
             
             StarInternal ACCESS Internal.Handle; 
             
-            Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex := ClosestSyncPocket(Parameters.MeshZoneStartPos, StagingParameters.Position + Parameters.StartOffset, Internal.Handle);
+            Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex := ClosestSyncPocket(StagingParameters.Position + Parameters.StartOffset, Parameters.MeshZoneStartPos, Internal.Handle);
             IF (Internal.Data.Backup.SyncFurtherIn.CurrentPocketIndex <> slNO_CLOSEST_POCKET_FOUND) AND tbBufferShAvailable(ADR(StagingBuffer)) THEN
                 Internal.Status := tbBufferGetFirst(ADR(StagingBuffer), ADR(Internal.Axis));
                 IF Internal.Status = ERR_OK THEN

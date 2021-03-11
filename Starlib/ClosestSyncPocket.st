@@ -5,28 +5,30 @@ FUNCTION ClosestSyncPocket
     StarInternal ACCESS Handle;
     
     FOR i := 0 TO StarInternal.MaxTargetIndex DO
-        TangentPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - MeshZoneStartPos;
-        FirstSyncPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - SyncZoneStartPos;
+        
+        FirstSyncPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - StartPos;
+        LastSyncPocketLocationErrorNew := StarInternal.PocketSync[i].TargetPosition - EndPos;
         IF i = 0 THEN
-            TangentPocketLocationError := TangentPocketLocationErrorNew;
             FirstSyncPocketLocationError    := FirstSyncPocketLocationErrorNew;
+            LastSyncPocketLocationError := LastSyncPocketLocationErrorNew;
         END_IF;
         
-        IF ABS(TangentPocketLocationErrorNew) < ABS(TangentPocketLocationError) AND (StarInternal.PocketSync[i].TargetPosition <= MeshZoneStartPos) THEN
-            TangentPocketIndex := i;
-            TangentPocketLocationError := TangentPocketLocationErrorNew;
-        END_IF
-        
-        IF ABS(FirstSyncPocketLocationErrorNew) < ABS(FirstSyncPocketLocationError) AND StarInternal.PocketSync[i].TargetPosition >= SyncZoneStartPos THEN
+        IF ABS(FirstSyncPocketLocationErrorNew) < ABS(FirstSyncPocketLocationError) AND StarInternal.PocketSync[i].TargetPosition >= StartPos THEN
             FirstSyncPocketIndex := i;
             FirstSyncPocketLocationError := FirstSyncPocketLocationErrorNew;
         END_IF
+        
+        IF ABS(LastSyncPocketLocationErrorNew) < ABS(LastSyncPocketLocationError) AND (StarInternal.PocketSync[i].TargetPosition <= EndPos) THEN
+            LastSyncPocketIndex := i;
+            LastSyncPocketLocationError := LastSyncPocketLocationErrorNew;
+        END_IF
+        
     END_FOR
     
     CurrentEvalPocket   := FirstSyncPocketIndex;
     PrevEvalPocket      := FirstSyncPocketIndex;
     FOR i := 0 TO StarInternal.MaxTargetIndex DO
-        IF (CurrentEvalPocket = TangentPocketIndex) OR (StarInternal.PocketSync[CurrentEvalPocket].Sync) THEN
+        IF StarInternal.PocketSync[CurrentEvalPocket].Sync THEN
             CurrentEvalPocket   := PrevEvalPocket;
             EXIT;
         ELSE 
