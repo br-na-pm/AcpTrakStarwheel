@@ -528,16 +528,17 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.ElasticMoveAbs.Velocity := StagingParameters.Velocity;
                 Internal.ElasticMoveAbs.Acceleration := StagingParameters.Acceleration;
                 Internal.ElasticMoveAbs.Deceleration := StagingParameters.Deceleration;
-                Internal.ElasticMoveAbs.Execute := TRUE;
+                Internal.ShReadInfo.Axis := ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]);
                 IF Internal.Data.Init.ShuttlePos[Internal.Data.Init.ShuttleEvalCount] >= StartingParameters.Position THEN
                     Internal.Status := tbBufferAddSh(ADR(StagingBuffer), ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]));
                 ELSE
                     Internal.Status := tbBufferAddSh(ADR(LandingBuffer), ADR(Internal.Data.Init.ShuttleAxis[Internal.Data.Init.ShuttleEvalCount]));
                 END_IF
                 IF Internal.Status = ERR_OK THEN
+                    Internal.ElasticMoveAbs.Execute := TRUE;
+                    Internal.ShReadInfo.Enable := TRUE;
                     Internal.State := slREC_STATE_PBACKUP_ZONE_NEXT;
                 ELSE
-                    Internal.ElasticMoveAbs.Execute := FALSE;
                     Error := 1;
                     ErrorID := Internal.Status;
                     Internal.State := slREC_STATE_ERROR;
@@ -551,20 +552,45 @@ FUNCTION_BLOCK slStarRecovery
                 
             IF NOT Enable THEN
                 Internal.ElasticMoveAbs.Execute := FALSE;
+                Internal.ShReadInfo.Enable := FALSE;
                 Internal.State := slREC_STATE_WAIT_NOT_BUSY;
             ELSIF Internal.ElasticMoveAbs.Error THEN
                 Internal.ElasticMoveAbs.Execute := FALSE;
+                Internal.ShReadInfo.Enable := FALSE;
                 Error := 1;
                 ErrorID := Internal.ElasticMoveAbs.ErrorID;
                 Internal.State := slREC_STATE_ERROR;
-            ELSIF Internal.ElasticMoveAbs.Active OR Internal.ElasticMoveAbs.Done THEN
+            ELSIF Internal.ShReadInfo.Error THEN
                 Internal.ElasticMoveAbs.Execute := FALSE;
+                Internal.ShReadInfo.Enable := FALSE;
+                Error := 1;
+                ErrorID := Internal.ShReadInfo.ErrorID;
+                Internal.State := slREC_STATE_ERROR;
+            ELSIF Internal.ElasticMoveAbs.Done THEN
+                Internal.ElasticMoveAbs.Execute := FALSE;
+                Internal.ShReadInfo.Enable := FALSE;
                 Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
                 IF Internal.Data.Init.ShuttleEvalCount < Internal.Data.Init.NumShuttles THEN
                     Internal.State := slREC_STATE_PBACKUP_ZONE_RSIZE;
                 ELSE
                     Internal.State := slREC_STATE_MESH_ZONE_SYNC;
                 END_IF
+                
+            ELSIF Internal.ShReadInfo.Valid AND
+                Internal.ElasticMoveAbs.Active AND
+                Internal.ShReadInfo.ShuttleInfo.ManeuverInfo.Type = mcACPTRAK_MANEUVER_ADJUSTMENT AND
+                (Internal.ShReadInfo.ShuttleInfo.ManeuverInfo.Reason = mcACPTRAK_REASON_SHUTTLE OR
+                Internal.ShReadInfo.ShuttleInfo.ManeuverInfo.Reason = mcACPTRAK_REASON_BARRIER) THEN
+                
+                Internal.ElasticMoveAbs.Execute := FALSE;
+                Internal.ShReadInfo.Enable := FALSE;
+                Internal.Data.Init.ShuttleEvalCount := Internal.Data.Init.ShuttleEvalCount + 1;
+                IF Internal.Data.Init.ShuttleEvalCount < Internal.Data.Init.NumShuttles THEN
+                    Internal.State := slREC_STATE_PBACKUP_ZONE_RSIZE;
+                ELSE
+                    Internal.State := slREC_STATE_MESH_ZONE_SYNC;
+                END_IF
+                
             END_IF
                 
         slREC_STATE_MESH_ZONE_SYNC:
@@ -714,7 +740,7 @@ FUNCTION_BLOCK slStarRecovery
             
         slREC_STATE_WAIT_NOT_BUSY:
             
-            IF NOT (Internal.SecGetShuttle.Busy OR Internal.ShSwitchSector.Busy OR Internal.ShResize.Busy OR Internal.RoutedMoveVel.Busy OR Internal.ElasticMoveAbs.Busy OR Internal.ShCopyUserData.Busy) THEN
+            IF NOT (Internal.SecGetShuttle.Busy OR Internal.ShSwitchSector.Busy OR Internal.ShResize.Busy OR Internal.RoutedMoveVel.Busy OR Internal.ElasticMoveAbs.Busy OR Internal.ShReadInfo.Busy OR Internal.ShCopyUserData.Busy) THEN
                 Busy := 0;
                 Internal.State := slREC_STATE_IDLE;
             END_IF
@@ -734,6 +760,7 @@ FUNCTION_BLOCK slStarRecovery
     Internal.ShResize();
     Internal.RoutedMoveVel();
     Internal.ElasticMoveAbs();
+    Internal.ShReadInfo();
     Internal.ShCopyUserData();
     
 END_FUNCTION_BLOCK

@@ -127,6 +127,7 @@ TYPE
 		ShResize : MC_BR_ShResize_AcpTrak; (*Resize shuttle*)
 		RoutedMoveVel : MC_BR_RoutedMoveVel_AcpTrak; (*Send shuttle*)
 		ElasticMoveAbs : MC_BR_ElasticMoveAbs_AcpTrak; (*Move shuttle to staging position*)
+		ShReadInfo : MC_BR_ShReadInfo_AcpTrak; (*Read shuttle info*)
 		ShCopyUserData : MC_BR_ShCopyUserData_AcpTrak; (*Copy user data*)
 		OldRemainingCount : UINT; (*Previously recorded remaining count*)
 		Data : slStarRecoveryInternalDataType; (*Data*)
