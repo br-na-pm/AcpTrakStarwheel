@@ -268,6 +268,7 @@ TYPE
 		Destination : slStarPocketDestParType; (*Destination parameters*)
 		Recovery : slStarSyncRecoveryParType; (*Star parameters for recovery*)
 		Skip : slStarSyncSkipParType; (*Skip parameters*)
+		Assignment : slStarSyncAssignmentParType; (*Assignment parameters*)
 	END_STRUCT;
 	slStarSyncLandingParType : 	STRUCT  (*Landing parameters*)
 		Position : LREAL; (*Target Position*)
@@ -296,7 +297,16 @@ TYPE
 		NumDisabled : USINT; (*Number of disabled pockets*)
 		DisabledIdx : ARRAY[0..slMAX_DISABLE_POCKET_IDX]OF USINT; (*Disabled pockets*)
 	END_STRUCT;
-	slStarSyncCalcDataType : 	STRUCT 
+	slStarSyncAssignmentParType : 	STRUCT  (*Assignment parameters*)
+		AssignmentValues : ARRAY[0..slMAX_ASSIGNMENT_POCKET_IDX]OF USINT; (*Pocket assignment values*)
+		UserData : slStarSyncAssignUserDataParType; (*User Data parameters*)
+	END_STRUCT;
+	slStarSyncAssignUserDataParType : 	STRUCT  (*UserData parameters*)
+		UserDataAddress : UDINT; (*Pointer to the user data buffer*)
+		UserDataSize : UDINT; (*Size of the user data buffer*)
+		SrcUserDataAssignmentAddress : UDINT; (*Pointer to USINT of shuttle asignment value in the Assignment User Data*)
+	END_STRUCT;
+	slStarSyncCalcDataType : 	STRUCT  (*Pocket Sync Calculation Data*)
 		StarPosPredict : REAL; (*Current starwheel position + predictive compensation*)
 		CurrentStarwheelPeriod : INT; (*Current period of the 'real' starwheel, used to calculate a multiturn position*)
 		MultiturnPosition : REAL; (*Current position of the 'virtual' starwheel*)
@@ -315,6 +325,10 @@ TYPE
 		StagingBufferPar : tbElaMvAbsPosBufferParType; (*Staging buffer parameters*)
 		BarrierCmd : MC_BR_BarrierCommand_AcpTrak; (*Barrier control*)
 		PocketSync : ARRAY[0..slMAX_TARGET_IDX]OF slStarPocketSync; (*Pocket Sync Targets*)
+		ShCopyUserData : MC_BR_ShCopyUserData_AcpTrak; (*Copy shuttle user data*)
+		AssignmentValue : USINT; (*Assignment value of shuttle*)
+		AssignmentEvalAxis : McAxisType; (*Axis of shuttle to assign*)
+		AssignmentAvailable : BOOL; (*An assignment is available for a shuttle somewhere on the starwheel*)
 		LastPocketActiveState : ARRAY[0..slMAX_TARGET_IDX]OF BOOL; (*Capture the last pocket sync active state*)
 		LastTargetPosition : ARRAY[0..slMAX_TARGET_IDX]OF REAL; (*Last observed target position for each target*)
 		NextSyncTarget : UINT; (*Next target to sync shuttle with*)
@@ -349,6 +363,7 @@ TYPE
 		slSTAR_STATE_OPEN_BARRIER, (*Open the barrier*)
 		slSTAR_STATE_WAIT_TARGET, (*Wait for the next target to arrive*)
 		slSTAR_STATE_WAIT_SHUTTLE, (*Wait for the next shuttle to arrive*)
+		slSTAR_STATE_ASSIGN_SHUTTLE, (*Check if shuttle is assigned to the current pocket*)
 		slSTAR_STATE_SYNC, (*Sync shuttle to pocket*)
 		slSTAR_STATE_RESET_FB, (*Reset function blocks*)
 		slSTAR_STATE_RESET_BARRIER, (*Reset the barrier*)

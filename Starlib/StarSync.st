@@ -25,12 +25,14 @@ FUNCTION_BLOCK slStarSync
     			
                 Internal.PocketDisabled := 0;
                 IF DisablePockets AND (Parameters.Skip.NumDisabled > 0) THEN
-					FOR Internal.n := 0 TO MIN(Parameters.Skip.NumDisabled - 1, slMAX_DISABLE_POCKET_IDX) DO
-                        IF Parameters.Skip.DisabledIdx[Internal.n] = (Internal.i MOD (Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount)) THEN
-                            Internal.PocketDisabled := 1;
-                            EXIT;
-                        END_IF
-                    END_FOR
+                    IF Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount > 0 THEN
+    					FOR Internal.n := 0 TO MIN(Parameters.Skip.NumDisabled - 1, slMAX_DISABLE_POCKET_IDX) DO
+                            IF Parameters.Skip.DisabledIdx[Internal.n] = (Internal.i MOD Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount) THEN
+                                Internal.PocketDisabled := 1;
+                                EXIT;
+                            END_IF
+                        END_FOR
+                    END_IF
 				END_IF
 				
 				IF Internal.PocketDisabled THEN
@@ -89,6 +91,12 @@ FUNCTION_BLOCK slStarSync
                     
                     Error := 1;
                     ErrorID := slERR_MAX_TARGET_IDX;
+                    Internal.State := slSTAR_STATE_RESET_FB;
+                    
+                ELSIF Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount = 0 THEN
+                    
+                    Error := 1;
+                    ErrorID := slERR_ZERO_POCKETS;
                     Internal.State := slSTAR_STATE_RESET_FB;
                     
                 ELSE
@@ -247,7 +255,87 @@ FUNCTION_BLOCK slStarSync
                 ErrorID := Internal.StagingBufferMan.ErrorID;
                 Internal.State := slSTAR_STATE_RESET_FB;
             ELSIF tbBufferShAvailable(ADR(Internal.StagingBuffer)) THEN
-                Internal.State := slSTAR_STATE_SYNC;
+                IF AssignPockets THEN
+                    Internal.Status := tbBufferGetFirst(ADR(Internal.StagingBuffer), ADR(Internal.AssignmentEvalAxis));
+                    IF Internal.Status = ERR_OK THEN
+                        Internal.ShCopyUserData.Axis := ADR(Internal.AssignmentEvalAxis);
+                        Internal.ShCopyUserData.DataAddress := Parameters.Assignment.UserData.UserDataAddress;
+                        Internal.ShCopyUserData.DataSize := Parameters.Assignment.UserData.UserDataSize;
+                        Internal.ShCopyUserData.Mode := mcACPTRAK_USERDATA_GET;
+                        Internal.ShCopyUserData.Execute := 1;
+                        Internal.State := slSTAR_STATE_ASSIGN_SHUTTLE;
+                    ELSE
+                        Error := 1;
+                        ErrorID := Internal.Status;
+                        Internal.State := slSTAR_STATE_RESET_FB;
+                    END_IF
+                ELSE
+                    Internal.State := slSTAR_STATE_SYNC;
+                END_IF
+            END_IF
+            
+        slSTAR_STATE_ASSIGN_SHUTTLE:
+            
+            IF Internal.ShCopyUserData.Error THEN
+                Error := 1;
+                ErrorID := Internal.ShCopyUserData.ErrorID;
+                Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.ShCopyUserData.Done THEN
+                Internal.ShCopyUserData.Execute := 0;
+                IF Parameters.Assignment.UserData.SrcUserDataAssignmentAddress = 0 THEN
+                    Error := 1;
+                    ErrorID := slERR_NULL_POINTER;
+                    Internal.State := slSTAR_STATE_RESET_FB;
+                ELSIF Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount = 0 THEN
+                    Error := 1;
+                    ErrorID := slERR_ZERO_POCKETS;
+                    Internal.State := slSTAR_STATE_RESET_FB;
+                ELSE
+                    brsmemcpy(ADR(Internal.AssignmentValue), Parameters.Assignment.UserData.SrcUserDataAssignmentAddress, SIZEOF(Internal.AssignmentValue));
+                    IF Parameters.Recovery.SyncFurtherInEnabled AND NOT Internal.SyncFurtherInDone THEN
+                        IF Internal.AssignmentValue = Parameters.Assignment.AssignmentValues[Internal.NextSyncFITarget MOD Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount] THEN
+                            //The shuttle is assigned to this pocket
+                            Internal.State := slSTAR_STATE_SYNC;
+                        ELSE
+                            Internal.NewOvertakeDetected := 0;
+                            Internal.AssignmentAvailable := 0;
+                            FOR Internal.i := 0 TO Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount - 1 DO
+                                IF Internal.AssignmentValue = Parameters.Assignment.AssignmentValues[Internal.i] THEN
+                                    Internal.AssignmentAvailable := 1;
+                                    EXIT;
+                                END_IF
+                            END_FOR
+                            IF Internal.AssignmentAvailable THEN
+                                Internal.State := slSTAR_STATE_WAIT_TARGET;
+                            ELSE
+                                Error := 1;
+                                ErrorID := slERR_NO_ASSIGNMENT_POSSIBLE;
+                                Internal.State := slSTAR_STATE_RESET_FB;
+                            END_IF
+                        END_IF
+                    ELSE
+                        IF Internal.AssignmentValue = Parameters.Assignment.AssignmentValues[Internal.NextSyncTarget MOD Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount] THEN
+                            //The shuttle is assigned to this pocket
+                            Internal.State := slSTAR_STATE_SYNC;
+                        ELSE
+                            Internal.NewOvertakeDetected := 0;
+                            Internal.AssignmentAvailable := 0;
+                            FOR Internal.i := 0 TO Parameters.SyncPar.StarCalcTarget.StarwheelPocketCount - 1 DO
+                                IF Internal.AssignmentValue = Parameters.Assignment.AssignmentValues[Internal.i] THEN
+                                    Internal.AssignmentAvailable := 1;
+                                    EXIT;
+                                END_IF
+                            END_FOR
+                            IF Internal.AssignmentAvailable THEN
+                                Internal.State := slSTAR_STATE_WAIT_TARGET;
+                            ELSE
+                                Error := 1;
+                                ErrorID := slERR_NO_ASSIGNMENT_POSSIBLE;
+                                Internal.State := slSTAR_STATE_RESET_FB;
+                            END_IF
+                        END_IF
+                    END_IF
+                END_IF
             END_IF
         
         slSTAR_STATE_SYNC:
@@ -297,6 +385,7 @@ FUNCTION_BLOCK slStarSync
             Internal.StagingBufferMan.Enable := 0;
             Internal.BarrierCmd.Execute := 0;
             Internal.Recovery.Enable := 0;
+            Internal.ShCopyUserData.Execute := 0;
             Internal.SyncFurtherInDone  := FALSE;
             Internal.RecoveryDone   := FALSE;
             Internal.ErrorID := ErrorID;
@@ -331,11 +420,18 @@ FUNCTION_BLOCK slStarSync
                 END_IF
             END_FOR
             
-            IF NOT (Internal.BarrierCmd.Busy OR Internal.PocketSyncBusy OR Internal.LandingBufferMan.Busy OR Internal.StagingBufferMan.Busy OR Internal.Recovery.Busy) THEN
+            IF NOT (Internal.BarrierCmd.Busy OR 
+                Internal.PocketSyncBusy OR 
+                Internal.LandingBufferMan.Busy OR 
+                Internal.StagingBufferMan.Busy OR 
+                Internal.ShCopyUserData.Busy OR 
+                Internal.Recovery.Busy) THEN
+                
                 Error := 0;
                 ErrorID := ERR_OK;
                 Busy := 0;
                 Internal.State := slSTAR_STATE_IDLE;
+                
             END_IF
         
         slSTAR_STATE_ERROR:
