@@ -20,8 +20,8 @@ FUNCTION_BLOCK slStarSync
                 Internal.LastTargetPosition[Internal.i] < Parameters.Staging.Position + Parameters.StartOffset AND
                 Internal.PocketSync[Internal.i].TargetPosition < Parameters.SyncPar.StarCalcTarget.SectorTangentPos AND 
                 Internal.PocketSync[Internal.i].Active AND
-                NOT Internal.PocketSync[Internal.i].Sync 
-                AND Internal.RecoveryDone THEN
+                Internal.RecoveryDone AND
+                NOT (Hold OR Internal.PocketSync[Internal.i].Sync) THEN
     			
                 Internal.PocketDisabled := 0;
                 IF DisablePockets AND (Parameters.Skip.NumDisabled > 0) THEN
