@@ -35,11 +35,13 @@ FUNCTION_BLOCK slStarSync
                     END_IF
 				END_IF
 				
-				IF Internal.PocketDisabled THEN
+                IF Internal.PocketDisabled THEN
+                    Internal.NewOvertakeDetected    := FALSE;
 					Internal.NewDisabledOvertake	:= TRUE;
 				ELSE
 					Internal.NextSyncTarget			:= Internal.i;
-					Internal.NewOvertakeDetected	:= TRUE;
+                    Internal.NewOvertakeDetected	:= TRUE;
+                    Internal.NewDisabledOvertake    := FALSE;
 				END_IF;
 				
     			
@@ -51,6 +53,7 @@ FUNCTION_BLOCK slStarSync
     ELSE
         Internal.NextSyncTarget := 0;
         Internal.NewOvertakeDetected := FALSE;
+        Internal.NewDisabledOvertake := FALSE;
     END_IF
 
     CASE Internal.State OF
@@ -254,6 +257,9 @@ FUNCTION_BLOCK slStarSync
                 Error := 1;
                 ErrorID := Internal.StagingBufferMan.ErrorID;
                 Internal.State := slSTAR_STATE_RESET_FB;
+            ELSIF Internal.NewDisabledOvertake THEN
+                Internal.NewDisabledOvertake := 0;
+                Internal.State := slSTAR_STATE_WAIT_TARGET;
             ELSIF tbBufferShAvailable(ADR(Internal.StagingBuffer)) THEN
                 IF AssignPockets THEN
                     Internal.Status := tbBufferGetFirst(ADR(Internal.StagingBuffer), ADR(Internal.AssignmentEvalAxis));
