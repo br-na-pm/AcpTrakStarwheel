@@ -66,6 +66,7 @@ FUNCTION_BLOCK slStarRecovery
                 Internal.State  := slREC_STATE_GET_SHUTTLES_NEXT;
             ELSIF Internal.ShSwitchSector.Error THEN
                 Internal.ShSwitchSector.Execute  := FALSE;
+                Internal.SecGetShuttle.Enable := FALSE;
                 Error   := TRUE;
                 ErrorID := Internal.ShSwitchSector.ErrorID;
                 Internal.State := slREC_STATE_ERROR;
